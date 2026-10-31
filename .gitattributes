@@ -1,0 +1,2 @@
+# Preserve Windows wrapper line endings in checkouts, normalize them in Git.
+*.bat text eol=crlf

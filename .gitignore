@@ -22,3 +22,31 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Android local tools and artifacts
+.gradle/
+**/android/local.properties
+**/android/**/build/
+*.keystore
+!apps/fire-tv/android/app/debug.keystore
+*.jks
+.cxx/
+
+/apps/fire-tv/build/
+
+/.local-build-tools/
+
+# Capturas locais da interface em uso
+/.impeccable/review/
+
+/apps/smart-tv/build/
+
+# Credenciais e certificados locais
+.env
+.env.*
+!.env.example
+*.p12
+*.pfx
+*.key
+__pycache__/
+*.pyc

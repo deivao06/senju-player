@@ -1,0 +1,316 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-30T17:34:05.422174+00:00",
+  "title": "Design System: Senju TV",
+  "extensions": {
+    "colorMeta": {
+      "background": {
+        "role": "neutral",
+        "displayName": "background",
+        "tonalRamp": [
+          "oklch(15% 0.0101 170.60)",
+          "oklch(26% 0.0101 170.60)",
+          "oklch(38% 0.0101 170.60)",
+          "oklch(49% 0.0101 170.60)",
+          "oklch(61% 0.0101 170.60)",
+          "oklch(72% 0.0101 170.60)",
+          "oklch(84% 0.0101 170.60)",
+          "oklch(95% 0.0101 170.60)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "surface",
+        "tonalRamp": [
+          "oklch(15% 0.0199 160.21)",
+          "oklch(26% 0.0199 160.21)",
+          "oklch(38% 0.0199 160.21)",
+          "oklch(49% 0.0199 160.21)",
+          "oklch(61% 0.0199 160.21)",
+          "oklch(72% 0.0199 160.21)",
+          "oklch(84% 0.0199 160.21)",
+          "oklch(95% 0.0199 160.21)"
+        ]
+      },
+      "raised": {
+        "role": "neutral",
+        "displayName": "raised",
+        "tonalRamp": [
+          "oklch(15% 0.0276 159.02)",
+          "oklch(26% 0.0276 159.02)",
+          "oklch(38% 0.0276 159.02)",
+          "oklch(49% 0.0276 159.02)",
+          "oklch(61% 0.0276 159.02)",
+          "oklch(72% 0.0276 159.02)",
+          "oklch(84% 0.0276 159.02)",
+          "oklch(95% 0.0276 159.02)"
+        ]
+      },
+      "stroke": {
+        "role": "neutral",
+        "displayName": "stroke",
+        "tonalRamp": [
+          "oklch(15% 0.0339 158.99)",
+          "oklch(26% 0.0339 158.99)",
+          "oklch(38% 0.0339 158.99)",
+          "oklch(49% 0.0339 158.99)",
+          "oklch(61% 0.0339 158.99)",
+          "oklch(72% 0.0339 158.99)",
+          "oklch(84% 0.0339 158.99)",
+          "oklch(95% 0.0339 158.99)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "text",
+        "tonalRamp": [
+          "oklch(15% 0.0116 153.67)",
+          "oklch(26% 0.0116 153.67)",
+          "oklch(38% 0.0116 153.67)",
+          "oklch(49% 0.0116 153.67)",
+          "oklch(61% 0.0116 153.67)",
+          "oklch(72% 0.0116 153.67)",
+          "oklch(84% 0.0116 153.67)",
+          "oklch(95% 0.0116 153.67)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "muted",
+        "tonalRamp": [
+          "oklch(15% 0.0305 156.42)",
+          "oklch(26% 0.0305 156.42)",
+          "oklch(38% 0.0305 156.42)",
+          "oklch(49% 0.0305 156.42)",
+          "oklch(61% 0.0305 156.42)",
+          "oklch(72% 0.0305 156.42)",
+          "oklch(84% 0.0305 156.42)",
+          "oklch(95% 0.0305 156.42)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "accent",
+        "tonalRamp": [
+          "oklch(15% 0.2123 150.86)",
+          "oklch(26% 0.2123 150.86)",
+          "oklch(38% 0.2123 150.86)",
+          "oklch(49% 0.2123 150.86)",
+          "oklch(61% 0.2123 150.86)",
+          "oklch(72% 0.2123 150.86)",
+          "oklch(84% 0.2123 150.86)",
+          "oklch(95% 0.2123 150.86)"
+        ]
+      },
+      "onAccent": {
+        "role": "primary",
+        "displayName": "onAccent",
+        "tonalRamp": [
+          "oklch(15% 0.0426 156.87)",
+          "oklch(26% 0.0426 156.87)",
+          "oklch(38% 0.0426 156.87)",
+          "oklch(49% 0.0426 156.87)",
+          "oklch(61% 0.0426 156.87)",
+          "oklch(72% 0.0426 156.87)",
+          "oklch(84% 0.0426 156.87)",
+          "oklch(95% 0.0426 156.87)"
+        ]
+      },
+      "focus": {
+        "role": "primary",
+        "displayName": "focus",
+        "tonalRamp": [
+          "oklch(15% 0.0809 156.47)",
+          "oklch(26% 0.0809 156.47)",
+          "oklch(38% 0.0809 156.47)",
+          "oklch(49% 0.0809 156.47)",
+          "oklch(61% 0.0809 156.47)",
+          "oklch(72% 0.0809 156.47)",
+          "oklch(84% 0.0809 156.47)",
+          "oklch(95% 0.0809 156.47)"
+        ]
+      },
+      "selected": {
+        "role": "primary",
+        "displayName": "selected",
+        "tonalRamp": [
+          "oklch(15% 0.0560 157.32)",
+          "oklch(26% 0.0560 157.32)",
+          "oklch(38% 0.0560 157.32)",
+          "oklch(49% 0.0560 157.32)",
+          "oklch(61% 0.0560 157.32)",
+          "oklch(72% 0.0560 157.32)",
+          "oklch(84% 0.0560 157.32)",
+          "oklch(95% 0.0560 157.32)"
+        ]
+      },
+      "player": {
+        "role": "neutral",
+        "displayName": "player",
+        "tonalRamp": [
+          "oklch(15% 0.0430 161.08)",
+          "oklch(26% 0.0430 161.08)",
+          "oklch(38% 0.0430 161.08)",
+          "oklch(49% 0.0430 161.08)",
+          "oklch(61% 0.0430 161.08)",
+          "oklch(72% 0.0430 161.08)",
+          "oklch(84% 0.0430 161.08)",
+          "oklch(95% 0.0430 161.08)"
+        ]
+      },
+      "button-focus": {
+        "role": "primary",
+        "displayName": "button-focus",
+        "tonalRamp": [
+          "oklch(15% 0.0655 156.36)",
+          "oklch(26% 0.0655 156.36)",
+          "oklch(38% 0.0655 156.36)",
+          "oklch(49% 0.0655 156.36)",
+          "oklch(61% 0.0655 156.36)",
+          "oklch(72% 0.0655 156.36)",
+          "oklch(84% 0.0655 156.36)",
+          "oklch(95% 0.0655 156.36)"
+        ]
+      },
+      "input-focus": {
+        "role": "primary",
+        "displayName": "input-focus",
+        "tonalRamp": [
+          "oklch(15% 0.0373 156.91)",
+          "oklch(26% 0.0373 156.91)",
+          "oklch(38% 0.0373 156.91)",
+          "oklch(49% 0.0373 156.91)",
+          "oklch(61% 0.0373 156.91)",
+          "oklch(72% 0.0373 156.91)",
+          "oklch(84% 0.0373 156.91)",
+          "oklch(95% 0.0373 156.91)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Chamada",
+        "purpose": "Login."
+      },
+      "card-title": {
+        "displayName": "Nome da capa",
+        "purpose": "Grade de catálogo."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "card-focus-scale",
+        "value": "1.025",
+        "purpose": "Transformação imediata de foco; não é animação contínua."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "short-login",
+        "value": "height < 430dp"
+      },
+      {
+        "name": "compact-width",
+        "value": "width < 760dp"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Home platform tile",
+      "kind": "card",
+      "description": "Extensão local da Home: raio12dp, padding12dp e foco nativo com escala1.025. Logos PNG locais de Netflix, Globoplay, Prime Video, Disney+ e HBO; fundos de marca restritos aos tiles. Exemplo textual ilustrativo, sem reproduzir logos ou provar navegação nativa.",
+      "html": "<button class=\"ds-home-platform\"><strong>Prime Video</strong><span>Séries · Ao vivo</span></button>",
+      "css": ".ds-home-platform{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:171px;height:142px;padding:12px;border:2px solid transparent;border-radius:12px;background:#0c2031;color:#edf5ef;font:600 14px system-ui}.ds-home-platform span{color:#a2b7a9;font:10px system-ui}.ds-home-platform:hover,.ds-home-platform:focus-visible{outline:none;border-color:#c2ffd8;transform:scale(1.025)}.ds-home-platform:disabled{opacity:.45}",
+      "refersTo": ""
+    },
+    {
+      "name": "Button primary",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Tradução ilustrativa do componente nativo; medidas CSS não validam escala ou foco de TV.",
+      "html": "<button class=\"ds-button-primary\">Continuar</button>",
+      "css": ".ds-button-primary{border:2px solid transparent;border-radius:10px;padding:9px 14px;min-height:46px;font:600 15px system-ui;background:#34ef7d;color:#062012}.ds-button-primary:hover,.ds-button-primary:focus-visible{outline:none;border-color:#c2ffd8;background:#204c33;color:#edf5ef}.ds-button-primary:active{opacity:.75}.ds-button-primary:disabled{opacity:.4}"
+    },
+    {
+      "name": "Button secondary",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Tradução ilustrativa do componente nativo; medidas CSS não validam escala ou foco de TV.",
+      "html": "<button class=\"ds-button-secondary\">Continuar</button>",
+      "css": ".ds-button-secondary{border:2px solid transparent;border-radius:10px;padding:9px 14px;min-height:46px;font:600 15px system-ui;background:#17271e;color:#edf5ef}.ds-button-secondary:hover,.ds-button-secondary:focus-visible{outline:none;border-color:#c2ffd8;background:#204c33;color:#edf5ef}.ds-button-secondary:active{opacity:.75}.ds-button-secondary:disabled{opacity:.4}"
+    },
+    {
+      "name": "Button quiet",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Tradução ilustrativa do componente nativo; medidas CSS não validam escala ou foco de TV.",
+      "html": "<button class=\"ds-button-quiet\">Continuar</button>",
+      "css": ".ds-button-quiet{border:2px solid transparent;border-radius:10px;padding:9px 14px;min-height:46px;font:600 15px system-ui;background:transparent;color:#edf5ef}.ds-button-quiet:hover,.ds-button-quiet:focus-visible{outline:none;border-color:#c2ffd8;background:#204c33;color:#edf5ef}.ds-button-quiet:active{opacity:.75}.ds-button-quiet:disabled{opacity:.4}"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Tradução ilustrativa do componente nativo; medidas CSS não validam escala ou foco de TV.",
+      "html": "<input class=\"ds-input\" aria-label=\"Endereço da lista\" placeholder=\"Endereço da lista\">",
+      "css": ".ds-input{border:2px solid #2b4034;border-radius:10px;background:#060b09;color:#edf5ef;font:15px system-ui;padding:7px 13px;min-height:44px}.ds-input::placeholder{color:#a2b7a9}.ds-input:hover,.ds-input:focus-visible{outline:none;border-color:#c2ffd8;background:#172d20}"
+    },
+    {
+      "name": "Catalog card",
+      "kind": "card",
+      "refersTo": "catalog-card",
+      "description": "Tradução ilustrativa do componente nativo; medidas CSS não validam escala ou foco de TV.",
+      "html": "<button class=\"ds-card\"><span class=\"ds-art\">SE</span><span>Seu conteúdo</span></button>",
+      "css": ".ds-card{width:130px;border:2px solid transparent;border-radius:9px;background:transparent;color:#edf5ef;font:600 12px/15px system-ui;text-align:left;overflow:hidden}.ds-art{display:flex;height:145px;align-items:center;justify-content:center;background:#101b15;border-radius:4px;margin:2px;font-size:27px;color:#a2b7a9}.ds-card:hover,.ds-card:focus-visible{outline:none;border-color:#c2ffd8;background:#101b15;transform:scale(1.025)}.ds-card:active{opacity:.75}"
+    },
+    {
+      "name": "Navigation row",
+      "kind": "nav",
+      "refersTo": "button-quiet",
+      "description": "Tradução ilustrativa do componente nativo; medidas CSS não validam escala ou foco de TV.",
+      "html": "<nav class=\"ds-nav\"><button aria-current=\"page\">Favoritos</button><button>Histórico</button></nav>",
+      "css": ".ds-nav{width:240px;background:#101b15;padding:8px}.ds-nav button{display:block;width:100%;height:40px;padding:6px 18px;border:2px solid transparent;border-radius:10px;text-align:left;background:transparent;color:#edf5ef;font:600 13px/18px system-ui}.ds-nav [aria-current]{background:#163b27;color:#c2ffd8}.ds-nav button:hover,.ds-nav button:focus-visible{outline:none;border-color:#c2ffd8;background:#204c33;color:#edf5ef}.ds-nav button:active{opacity:.75}"
+    },
+    {
+      "name": "Transport",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Tradução ilustrativa do componente nativo; medidas CSS não validam escala ou foco de TV.",
+      "html": "<button class=\"ds-transport\" aria-label=\"Reproduzir\"><svg viewBox=\"0 0 24 24\" width=\"27\" height=\"27\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M7 4v16l14-8z\"/></svg></button>",
+      "css": ".ds-transport{display:flex;align-items:center;justify-content:center;width:60px;height:60px;border-radius:30px;border:2px solid transparent;background:#185236f2;color:#edf5ef}.ds-transport:hover,.ds-transport:focus-visible{outline:none;border-color:#c2ffd8;background:#205b3ef5}.ds-transport:active{opacity:.7}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Cinema em casa",
+    "overview": "Painel audiovisual doméstico: preto esverdeado, controles precisos e conteúdo em primeiro plano. A linguagem dos equipamentos de sala inspira separação tonal, espaçamento consistente e foco nítido.\n\nSistema nativo React Native TV, com tipografia do sistema e ícones locais; não exige novas fontes, imagens decorativas ou dependências. A documentação descreve o código atual, sem afirmar aprovação visual ou desempenho em hardware.",
+    "keyCharacteristics": [
+      "Identidade verde escura com acento luminoso reservado às ações.",
+      "Contorno claro e preenchimento distinguem foco de seleção.",
+      "Profundidade tonal, sem sombras decorativas ou blur."
+    ],
+    "rules": [
+      {
+        "name": "The Focus Rule",
+        "body": "Foco deve combinar contorno claro e mudança de preenchimento; seleção permanece mais contida.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tonal Depth Rule",
+        "body": "Usar superfícies e contornos para hierarquia, sem blur ou brilho decorativo.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do preservar o foco por contorno e preenchimento em controles e campos.",
+      "Do usar tipografia nativa e números tabulares nos tempos.",
+      "Do manter informação contextual em espaço reservado, sem deslocar a grade."
+    ],
+    "donts": [
+      "Don't saturar todas as superfícies com verde de ação.",
+      "Don't adicionar blur, brilho decorativo ou animação contínua.",
+      "Don't tratar exemplos HTML do sidecar como validação do aplicativo nativo."
+    ]
+  }
+}

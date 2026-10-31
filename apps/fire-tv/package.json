@@ -1,0 +1,35 @@
+{
+  "name": "@senju/fire-tv",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "react-native start",
+    "android": "react-native run-android",
+    "typecheck": "tsc --noEmit",
+    "bundle": "node -e \"require('fs').mkdirSync('build', {recursive:true})\" && react-native bundle --platform android --dev false --entry-file index.js --bundle-output build/index.android.bundle --assets-dest build",
+    "apk:debug": "cd android && ./gradlew assembleDebug",
+    "apk:release": "cd android && ./gradlew assembleRelease",
+    "test": "node --import tsx tests/runtime.test.ts && node --import tsx tests/catalogCache.test.ts",
+    "apk:sideload": "cd android && ./gradlew assembleSideload"
+  },
+  "dependencies": {
+    "@senju/iptv": "workspace:*",
+    "react": "19.1.0",
+    "react-native": "npm:react-native-tvos@0.81.5-0",
+    "react-native-video": "6.19.0",
+    "react-native-keychain": "10.0.0",
+    "@react-native-async-storage/async-storage": "2.2.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@babel/runtime": "^7.25.0",
+    "@react-native-community/cli": "20.0.0",
+    "@react-native-community/cli-platform-android": "20.0.0",
+    "@react-native/babel-preset": "0.81.5",
+    "@react-native/metro-config": "0.81.5",
+    "@react-native/typescript-config": "0.81.5",
+    "@types/react": "19.1.0",
+    "typescript": "~5.9.3",
+    "tsx": "4.20.6"
+  }
+}

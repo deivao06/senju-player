@@ -1,0 +1,26 @@
+{
+  "name": "@senju/smart-tv",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5174",
+    "build": "tsc --noEmit && vite build",
+    "build:webos": "pnpm build && node scripts/stage.mjs webos",
+    "build:tizen": "pnpm build && node scripts/stage.mjs tizen",
+    "test": "node --import tsx tests/runtime.test.ts"
+  },
+  "dependencies": {
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "@senju/iptv": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "4.7.0",
+    "typescript": "5.9.3",
+    "vite": "6.4.1",
+    "tsx": "4.20.6"
+  }
+}

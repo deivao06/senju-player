@@ -1,0 +1,12 @@
+{
+  "id": "com.senju.player.tv",
+  "version": "0.1.0",
+  "vendor": "Senju Player",
+  "type": "web",
+  "main": "index.html",
+  "title": "Senju Player",
+  "icon": "icon.png",
+  "resolution": "1920x1080",
+  "bgColor": "#060b09",
+  "requiredACG": []
+}

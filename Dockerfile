@@ -1,13 +1,7 @@
-FROM node:20-alpine
-
+FROM node:22-alpine
 WORKDIR /app
-
-COPY package*.json ./
-
-RUN npm install --legacy-peer-deps
-
+RUN corepack enable
 COPY . .
-
+RUN pnpm install --frozen-lockfile
 EXPOSE 5173
-
-CMD ["npm", "run", "dev", "--", "--host"]
+CMD ["pnpm", "dev", "--host"]

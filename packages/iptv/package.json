@@ -1,0 +1,17 @@
+{
+  "name": "@senju/iptv",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "iptv-playlist-parser": "0.15.2"
+  },
+  "scripts": {
+    "test": "node --import tsx tests/services.test.ts"
+  },
+  "devDependencies": {
+    "tsx": "4.20.6"
+  }
+}

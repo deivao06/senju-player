@@ -162,4 +162,88 @@ await test('Player LG remove listeners e fonte ao sair', async () => {
   assert.ok(calls.includes('src'));
   assert.ok(calls.includes('pause'));
 });
+
+import { indexCatalog, selectCatalog, PAGE_SIZE, GROUP_PAGE_SIZE } from '../src/catalogIndex';
+import { emptyLibrary, favoriteItem, watchedItem } from '../src/persistence';
+await test('Índice respeita menu/plataforma, acentos e grupos secundários sem reclassificar por título', () => {
+  const records = [
+    {
+      ...item,
+      id: 'a',
+      name: 'Ação',
+      groupName: 'Outros',
+      groupNames: ['Outros', 'NETFLIX | FILMES'],
+    },
+    { ...item, id: 'b', name: 'Netflix não significa plataforma', groupName: 'Geral' },
+    { ...item, id: 'c', name: 'Terceiro', groupName: 'NETFLIX | FILMES', groupNames: [] },
+  ];
+  const index = indexCatalog(records);
+  assert.equal(selectCatalog(index, { platform: '', group: '', query: '' }), records);
+  assert.deepEqual(
+    selectCatalog(index, { platform: 'netflix', group: '', query: 'ACAO' }).map((i) => i.id),
+    ['a'],
+  );
+  assert.deepEqual(
+    selectCatalog(index, { platform: 'netflix', group: 'NETFLIX | FILMES', query: '' }).map(
+      (i) => i.id,
+    ),
+    ['a', 'c'],
+  );
+  assert.deepEqual(selectCatalog(index, { platform: 'netflix', group: 'Geral', query: '' }), []);
+  assert.ok(PAGE_SIZE <= 30 && GROUP_PAGE_SIZE <= 80);
+});
+await test('Catálogo extenso mantém índice por grupo distinto, identidade e ordem', () => {
+  const records = Array.from({ length: 50_000 }, (_, n) => ({
+    ...item,
+    id: String(n),
+    name: 'Título ' + n,
+    groupName: 'Grupo ' + (n % 100),
+  }));
+  const index = indexCatalog(records);
+  assert.equal(index.platforms.size, 100);
+  assert.equal(index.items, records);
+  assert.equal(selectCatalog(index, { platform: '', group: 'Grupo 1', query: '' }).length, 500);
+  assert.equal(records[0].id, '0');
+  assert.equal(records[49_999].id, '49999');
+});
+await test('Biblioteca guarda a série no histórico e mantém episódio atual mesmo com progresso zero', () => {
+  const series = {
+    ...item,
+    id: 'series-1',
+    name: 'Série',
+    category: 'SERIES' as const,
+    seriesId: '1',
+  };
+  const episode = { ...item, id: 'episode-1' };
+  const next = { ...item, id: 'episode-2' };
+  let library = watchedItem(emptyLibrary(), episode, 123, series);
+  assert.equal(library.recent[0].id, series.id);
+  assert.equal(library.progress[episode.id], 123);
+  library = watchedItem(library, episode, 0, series, true);
+  library = watchedItem(library, next, 0, series);
+  assert.equal(library.currentEpisodes[series.id], next.id);
+  assert.equal(library.episodeParents[next.id], series.id);
+  library = watchedItem(library, next, 0, series, true);
+  assert.equal(library.currentEpisodes[series.id], undefined);
+});
+await test('Favoritos e histórico possuem limites e não preservam progresso de itens removidos', () => {
+  let library = emptyLibrary();
+  for (let i = 0; i < 240; i++) library = favoriteItem(library, { ...item, id: 'm' + i });
+  assert.equal(library.favorites.length, 200);
+  for (let i = 0; i < 70; i++) library = watchedItem(library, { ...item, id: 'h' + i }, 20);
+  assert.equal(library.recent.length, 50);
+  assert.equal(Object.keys(library.progress).length, 50);
+  library = favoriteItem(library, library.favorites[0]);
+  assert.equal(library.favorites.length, 199);
+});
+import { gridNeighbor } from '../src/gridFocus';
+await test('Grade Smart TV move foco e rolagem na mesma pressão do D-pad', () => {
+  assert.equal(gridNeighbor(0, 'down', 30, 6), 6);
+  assert.equal(gridNeighbor(6, 'up', 30, 6), 0);
+  assert.equal(gridNeighbor(7, 'left', 30, 6), 6);
+  assert.equal(gridNeighbor(5, 'right', 30, 6), undefined);
+  assert.equal(gridNeighbor(24, 'down', 30, 6), undefined);
+  assert.equal(gridNeighbor(0, 'left', 30, 6), undefined);
+  assert.equal(gridNeighbor(3, 'down', 30, 1), 4);
+});
 console.log(`${passed} testes Smart TV passaram. Não substituem validação em hardware.`);

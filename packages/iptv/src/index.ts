@@ -6,3 +6,5 @@ export { XtreamService } from './XtreamService';
 export * from './catalogOrder';
 export * from './catalogNavigation';
 export * from './homePlatforms';
+
+export * from './contentDetails';

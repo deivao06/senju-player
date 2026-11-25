@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   BackHandler,
@@ -32,6 +32,7 @@ import {
   type CategoryGroups,
   type CatalogSelection,
 } from './catalogNavigation';
+import { gridNeighbor, type GridDirection } from './catalogGridFocus';
 
 const labels: Record<ItemCategory, string> = {
   CHANNEL: 'Ao vivo',
@@ -132,6 +133,27 @@ export function CatalogScreen(props: Props) {
   const cardWidth = Math.floor((available - (columns - 1) * 10) / columns);
   const cardHeight = Math.round(cardWidth * (poster ? 1.2 : 0.55)) + 47;
   const rowHeight = cardHeight + 10;
+  const cardRefs = useRef(new Map<number, React.RefObject<View | null>>());
+  const [, refreshFocusLinks] = useState(0);
+  function cardRef(index: number): React.RefObject<View | null> {
+    if (index === 0) return firstCard;
+    let ref = cardRefs.current.get(index);
+    if (!ref) {
+      ref = { current: null };
+      cardRefs.current.set(index, ref);
+    }
+    return ref;
+  }
+  function focusTag(index: number, direction: GridDirection, edgeTag?: number) {
+    const neighbor = gridNeighbor(index, direction, displayed.length, columns);
+    const node = neighbor === undefined ? null : cardRef(neighbor).current;
+    return (node && findNodeHandle(node)) || edgeTag;
+  }
+  useLayoutEffect(() => {
+    for (const index of cardRefs.current.keys())
+      if (index >= displayed.length) cardRefs.current.delete(index);
+    refreshFocusLinks((value) => value + 1);
+  }, [displayed, columns]);
   const initial = props.episodes
     ? Math.max(
         0,
@@ -139,6 +161,36 @@ export function CatalogScreen(props: Props) {
       )
     : Math.min(props.initialIndex, Math.max(0, props.items.length - 1));
   const favorites = useMemo(() => new Set(props.favorites), [props.favorites]);
+  const cardHandlers = useRef({
+    onFocus: props.onFocus,
+    onOpen: props.onOpen,
+    onFavorite: props.onFavorite,
+    items: props.items,
+    episodes: props.episodes,
+  });
+  cardHandlers.current = {
+    onFocus: props.onFocus,
+    onOpen: props.onOpen,
+    onFavorite: props.onFavorite,
+    items: props.items,
+    episodes: props.episodes,
+  };
+  const handleCardFocus = useCallback(
+    (item: PlaylistItem, index: number, node: View | null) => {
+      searchEditing.current = false;
+      lastCard.current = node;
+      focusedInfo.current?.show(item);
+      cardHandlers.current.onFocus(
+        cardHandlers.current.episodes ? cardHandlers.current.items.indexOf(item) : index,
+      );
+    },
+    [],
+  );
+  const handleCardPress = useCallback((item: PlaylistItem) => cardHandlers.current.onOpen(item), []);
+  const handleCardFavorite = useCallback(
+    (item: PlaylistItem) => cardHandlers.current.onFavorite(item),
+    [],
+  );
   const openCategories = useCallback((origin: 'menu' | 'grid') => {
     drawerOrigin.current = origin;
     setDrawer('categories');
@@ -344,7 +396,7 @@ export function CatalogScreen(props: Props) {
         )}
         {props.loading && (
           <View style={styles.loading}>
-            <ActivityIndicator size="small" color="#38e883" />
+            <ActivityIndicator size="small" color={colors.accent} />
             <Text style={styles.muted}>
               {props.filter === 'new' ? 'Carregando filmes e séries…' : 'Carregando catálogo…'}
             </Text>
@@ -450,7 +502,7 @@ export function CatalogScreen(props: Props) {
                   data={displayed}
                   numColumns={columns}
                   extraData={props.favorites}
-                  keyExtractor={(item, index) => `${item.id}:${index}`}
+                  keyExtractor={(item) => `${item.category}:${item.id}`}
                   initialNumToRender={columns * 3}
                   maxToRenderPerBatch={columns * 2}
                   windowSize={5}
@@ -506,23 +558,21 @@ export function CatalogScreen(props: Props) {
                   renderItem={({ item, index }) => (
                     <CatalogCard
                       item={item}
+                      index={index}
                       width={cardWidth}
                       height={cardHeight}
                       poster={poster}
                       showType={props.filter === 'new' && !props.episodes}
                       favorite={favorites.has(item.id)}
                       preferred={!searchEditing.current && index === initial}
-                      leftTarget={index % columns === 0 ? leftTag : undefined}
-                      topTarget={index < columns ? topTag : undefined}
-                      focusRef={index === 0 ? firstCard : undefined}
-                      onFocus={(node) => {
-                        searchEditing.current = false;
-                        lastCard.current = node;
-                        focusedInfo.current?.show(item);
-                        props.onFocus(props.episodes ? props.items.indexOf(item) : index);
-                      }}
-                      onPress={() => props.onOpen(item)}
-                      onFavorite={() => props.onFavorite(item)}
+                      leftTarget={focusTag(index, 'left', index % columns === 0 ? leftTag : undefined)}
+                      topTarget={focusTag(index, 'up', index < columns ? topTag : undefined)}
+                      downTarget={focusTag(index, 'down')}
+                      rightTarget={focusTag(index, 'right')}
+                      focusRef={cardRef(index)}
+                      onFocus={handleCardFocus}
+                      onPress={handleCardPress}
+                      onFavorite={handleCardFavorite}
                     />
                   )}
                 />

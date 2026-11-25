@@ -8,6 +8,7 @@ import { catalogPresentation } from './catalogPresentation';
 
 type Props = {
   item: PlaylistItem;
+  index: number;
   width: number;
   height: number;
   poster: boolean;
@@ -16,13 +17,16 @@ type Props = {
   preferred: boolean;
   leftTarget?: number;
   topTarget?: number;
-  onFocus: (node: View | null) => void;
-  onPress: () => void;
-  onFavorite: () => void;
+  downTarget?: number;
+  rightTarget?: number;
+  onFocus: (item: PlaylistItem, index: number, node: View | null) => void;
+  onPress: (item: PlaylistItem) => void;
+  onFavorite: (item: PlaylistItem) => void;
   focusRef?: React.RefObject<View | null>;
 };
 export const CatalogCard = memo(function CatalogCard({
   item,
+  index,
   width,
   height,
   poster,
@@ -31,6 +35,8 @@ export const CatalogCard = memo(function CatalogCard({
   preferred,
   leftTarget,
   topTarget,
+  downTarget,
+  rightTarget,
   onFocus,
   onPress,
   onFavorite,
@@ -39,7 +45,7 @@ export const CatalogCard = memo(function CatalogCard({
   const { title, quality } = catalogPresentation(item.name);
   const internalRef = useRef<View>(null);
   const ref = focusRef || internalRef;
-  const { focused, updateFocus } = useTVFocus(ref, () => onFocus(ref.current));
+  const { focused, updateFocus } = useTVFocus(ref, () => onFocus(item, index, ref.current));
   const [failed, setFailed] = useState(false);
   const image = !failed && /^https?:\/\//i.test(item.tvgLogo || '') ? item.tvgLogo : undefined;
   useEffect(() => {
@@ -58,13 +64,15 @@ export const CatalogCard = memo(function CatalogCard({
       hasTVPreferredFocus={preferred}
       nextFocusLeft={leftTarget}
       nextFocusUp={topTarget}
+      nextFocusDown={downTarget}
+      nextFocusRight={rightTarget}
       accessibilityRole="button"
       accessibilityLabel={`${item.name}${favorite ? ', favorito' : ''}`}
       accessibilityHint="OK para abrir. Segure OK para alterar favorito."
       onFocus={() => updateFocus(true)}
       onBlur={() => updateFocus(false)}
-      onPress={onPress}
-      onLongPress={onFavorite}
+      onPress={() => onPress(item)}
+      onLongPress={() => onFavorite(item)}
       delayLongPress={650}
       style={[styles.card, { width, height }, focused && styles.focus]}
     >

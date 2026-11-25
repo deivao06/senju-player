@@ -165,3 +165,65 @@ test('Xtream preserves catalog inclusion and update timestamps without using rel
     }
   }
 });
+
+test('Xtream movie details encode the VOD id and normalize only supplied metadata', async () => {
+  const service = new XtreamService(async (url) => {
+    const parsed = new URL(url);
+    assert.equal(parsed.searchParams.get('action'), 'get_vod_info');
+    assert.equal(parsed.searchParams.get('vod_id'), '4 & 5');
+    assert.equal(parsed.searchParams.get('username'), creds.username);
+    return {
+      data: {
+        movie_data: { name: 'Filme da fonte' },
+        info: {
+          movie_image: 'https://images.test/poster.jpg',
+          backdrop_path: ['javascript:bad', 'https://images.test/back.jpg'],
+          plot: '<p>Sinopse</p> da fonte',
+          releasedate: '2024-01-01',
+          rating: 7.5,
+          duration: '01:42:00',
+          cast: 'Elenco',
+          director: { invalid: true },
+        },
+      },
+    };
+  });
+  const { info } = await service.fetchMovieInfo(creds, '4 & 5');
+  assert.equal(info.name, 'Filme da fonte');
+  assert.equal(info.cover, 'https://images.test/poster.jpg');
+  assert.equal(info.backdrop, 'https://images.test/back.jpg');
+  assert.equal(info.plot, 'Sinopse da fonte');
+  assert.equal(info.rating, '7.5');
+  assert.equal(info.releaseDate, '2024-01-01');
+  assert.equal(info.director, '');
+});
+test('Xtream missing descriptions do not invent metadata or change stream URLs', async () => {
+  const service = new XtreamService(async () => ({ data: { movie_data: { name: 'Só nome' } } }));
+  const { info } = await service.fetchMovieInfo(creds, '4');
+  assert.equal(info.plot, '');
+  assert.equal(info.cover, '');
+  assert.equal(info.backdrop, undefined);
+  assert.equal(info.rating, '');
+  assert.equal(info.name, 'Só nome');
+  await assert.rejects(
+    new XtreamService(async () => ({ data: '<html>failed</html>' })).fetchMovieInfo(creds, '4'),
+  );
+  await assert.rejects(
+    new XtreamService(async () => {
+      throw Error('offline');
+    }).fetchMovieInfo(creds, '4'),
+    /offline/,
+  );
+});
+test('Xtream series details accept missing info and a single backdrop URL', async () => {
+  const info = await new XtreamService(async () => ({
+    data: { info: { backdrop_path: 'https://images.test/background.jpg' }, episodes: {} },
+  })).fetchSeriesInfo(creds, '1');
+  assert.equal(info.info.backdrop, 'https://images.test/background.jpg');
+  const empty = await new XtreamService(async () => ({ data: { episodes: {} } })).fetchSeriesInfo(
+    creds,
+    '1',
+  );
+  assert.equal(empty.info.plot, '');
+  assert.deepEqual(empty.seasons, []);
+});

@@ -47,7 +47,8 @@ pnpm tv:apk:release             # assinatura release exige configuração própr
 
 React Native TV + react-native-video/Media3, sem WebView. Home com cinco
 plataformas, catálogo virtualizado, busca contextual, drawers, biblioteca pessoal,
-temporadas, player com controle de progresso e avanço de episódios. Cache de
+temporadas, detalhes de filmes/séries com capa e sinopse, player com controle de
+progresso e avanço de episódios. Cache de
 catálogo paginado e criptografado; credenciais no Keychain.
 
 APK sideload: `apps/fire-tv/android/app/build/outputs/apk/sideload/app-sideload.apk`.

@@ -22,7 +22,10 @@
     "smart:build": "pnpm --filter @senju/smart-tv build",
     "smart:test": "pnpm --filter @senju/smart-tv test",
     "smart:build:webos": "pnpm --filter @senju/smart-tv build:webos",
-    "smart:build:tizen": "pnpm --filter @senju/smart-tv build:tizen"
+    "smart:build:tizen": "pnpm --filter @senju/smart-tv build:tizen",
+    "smart:check-env": "pnpm --filter @senju/smart-tv check:environment",
+    "smart:test:browser": "pnpm --filter @senju/smart-tv test:browser",
+    "smart:benchmark": "pnpm --filter @senju/smart-tv benchmark"
   },
   "pnpm": {
     "overrides": {

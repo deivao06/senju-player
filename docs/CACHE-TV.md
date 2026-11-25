@@ -13,7 +13,7 @@ usuário. Compilação/testes locais não comprovam funcionamento ou ganho no ap
   plano. Se a rede/autenticação falhar, mantém o salvo e apresenta aviso. Não concede
   acesso a streams de uma conta expirada e não baixa vídeos.
 - Validade verificada na abertura/seleção de tipo; não há polling nem timer durante
-  a reprodução. Tipos já carregados e recentes ficam em memória.
+  a reprodução. Tipos já carregados ficam em memória por provedor e tipo (ver abaixo).
 - Perfil → Atualizar catálogo: ignora cache e consulta a fonte. Mantém catálogo/cache
   anteriores em caso de falha; uma atualização não fecha um vídeo aberto durante a consulta.
 - Perfil informa a data do snapshot salvo do tipo atual. Configurações → Limpar cache
@@ -25,6 +25,25 @@ usuário. Compilação/testes locais não comprovam funcionamento ou ganho no ap
 - M3U: snapshot único com o catálogo completo, já que a origem é uma playlist única.
 - Episódios/detalhes de séries ainda são consultados ao abrir a série. Cache de vídeo,
   download offline, cache adicional de imagens e sincronização remota estão fora desta etapa.
+
+## Cache em memória da sessão — 24/11/2026
+
+`catalogMemory.ts` guarda snapshots por provedor e tipo (`catalogKey`), com um
+mapa de tipos carregados separado por fonte. Trocar de provedor no menu lateral
+reutiliza o snapshot já presente: a grade aparece sem spinner e sem nova leitura
+do disco. O caminho rápido também desliga o indicador de atualização pendente.
+
+A biblioteca do usuário (`favorites`/`recent`/`progress`) acompanha a mesma chave
+de provedor, para que voltar a uma lista não reapresente o estado de outra. A
+troca/remoção de lista e **Configurações → Limpar cache** invalidam apenas as
+entradas correspondentes; a limpeza global também zera a memória. Um snapshot com
+mais de seis horas continua sendo exibido e atualizado em segundo plano, sem
+bloquear a navegação; a chave M3U combinada usa a identidade da fonte como `ALL`.
+
+Isso resolve a releitura e o loading repetido observados ao alternar provedores
+após o primeiro acesso. Não elimina a consulta inicial, a atualização de cache
+antigo nem a busca de detalhes/episódios, que seguem sob demanda. O ganho no
+Fire Stick ainda precisa ser medido no aparelho.
 
 ## Armazenamento e desempenho
 

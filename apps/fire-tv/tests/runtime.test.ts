@@ -434,6 +434,7 @@ test('new additions feed combines films and series within 30 days, excludes unda
 test('combined additions loads missing or stale Xtream catalogs only and M3U at most once', async () => {
   const { newCatalogTypes } = await import('../src/catalogSections');
   const { CACHE_FRESH_MS } = await import('../src/catalogCache');
+  const { catalogKey } = await import('../src/catalogMemory');
   const source = {
     id: 'fixture',
     name: 'Fixture',
@@ -441,19 +442,74 @@ test('combined additions loads missing or stale Xtream catalogs only and M3U at 
     data: { url: 'https://example.test', username: 'fixture', password: 'fixture' },
   };
   const now = Date.now();
-  const loaded = new Map<import('@senju/iptv').ItemCategory, number>([['CHANNEL', now]]);
+  const loaded = new Map<string, number>([[catalogKey(source, 'CHANNEL'), now]]);
   assert.deepEqual(newCatalogTypes(source, loaded, false, now), ['MOVIE', 'SERIES']);
-  loaded.set('MOVIE', now);
+  loaded.set(catalogKey(source, 'MOVIE'), now);
   assert.deepEqual(newCatalogTypes(source, loaded, false, now), ['SERIES']);
-  loaded.set('SERIES', now);
+  loaded.set(catalogKey(source, 'SERIES'), now);
   assert.deepEqual(newCatalogTypes(source, loaded, false, now), []);
   assert.deepEqual(newCatalogTypes(source, loaded, true, now), ['MOVIE', 'SERIES']);
-  loaded.set('MOVIE', now - CACHE_FRESH_MS);
+  loaded.set(catalogKey(source, 'MOVIE'), now - CACHE_FRESH_MS);
   assert.deepEqual(newCatalogTypes(source, loaded, false, now), ['MOVIE']);
   const m3u = { ...source, type: 'M3U' as const, data: 'https://example.test/list' };
   assert.deepEqual(newCatalogTypes(m3u, loaded, false, now), ['MOVIE']);
-  loaded.set('MOVIE', now);
+  loaded.set(catalogKey(m3u, 'MOVIE'), now);
   assert.deepEqual(newCatalogTypes(m3u, loaded, false, now), []);
+});
+
+test('session catalog memory keeps provider snapshots separate and survives source switches', async () => {
+  const { CatalogMemory, catalogKey } = await import('../src/catalogMemory');
+  const { CACHE_FRESH_MS } = await import('../src/catalogCache');
+  const base = {
+    id: 'provider',
+    name: 'Provider',
+    type: 'XTREAM' as const,
+    data: { url: 'https://example.test', username: 'fixture', password: 'fixture' },
+  };
+  const other = { ...base, id: 'other' };
+  const now = Date.now();
+  const memory = new CatalogMemory();
+  const snapshot = (name: string) => ({
+    items: [{ id: name, name, url: 'https://example.test', category: 'MOVIE' as const }],
+    groups: { MOVIE: [name] },
+    savedAt: now,
+  });
+  assert.equal(memory.get(base, 'MOVIE'), null);
+  assert.equal(memory.isLoaded(base, 'MOVIE', now), false);
+  memory.remember(base, 'MOVIE', snapshot('movies'));
+  memory.remember(base, 'SERIES', { ...snapshot('series'), items: [] });
+  memory.remember(other, 'MOVIE', snapshot('other-movies'));
+  assert.equal(memory.get(base, 'MOVIE')?.items[0].name, 'movies');
+  assert.equal(memory.get(other, 'MOVIE')?.items[0].name, 'other-movies');
+  assert.equal(memory.isLoaded(base, 'SERIES', now), true);
+  assert.equal(memory.isLoaded(other, 'SERIES', now), false);
+  assert.equal(memory.get(base, 'MOVIE')?.items[0].name, 'movies');
+  memory.forget(other.id);
+  assert.equal(memory.get(other, 'MOVIE'), null);
+  assert.equal(memory.get(base, 'MOVIE')?.items[0].name, 'movies');
+  memory.remember(base, 'MOVIE', { ...snapshot('stale'), savedAt: now - CACHE_FRESH_MS });
+  assert.equal(memory.isLoaded(base, 'MOVIE', now), false);
+  assert.equal(memory.get(base, 'MOVIE')?.items[0].name, 'stale');
+  memory.forget();
+  assert.equal(memory.loaded.size, 0);
+});
+
+test('M3U session memory marks all categories loaded with a single combined snapshot', async () => {
+  const { CatalogMemory, catalogKey } = await import('../src/catalogMemory');
+  const source = { id: 'm3u', name: 'M3U', type: 'M3U' as const, data: 'https://example.test/list' };
+  const now = Date.now();
+  const memory = new CatalogMemory();
+  memory.remember(source, 'CHANNEL', {
+    items: [],
+    groups: { CHANNEL: ['News'], MOVIE: ['Action'], SERIES: ['Drama'] },
+    savedAt: now,
+  });
+  for (const type of ['CHANNEL', 'MOVIE', 'SERIES'] as const) {
+    assert.equal(memory.isLoaded(source, type, now), true);
+    assert.equal(memory.get(source, type)?.groups[type]?.length, 1);
+  }
+  assert.equal(memory.loaded.size, 1);
+  assert.equal(catalogKey(source, 'MOVIE'), 'm3u:ALL');
 });
 
 test('home exposes exactly the five requested platforms and never fabricates source content types', async () => {
@@ -503,4 +559,112 @@ test('card quality presentation uses explicit tags and preserves titles, languag
   assert.deepEqual(catalogPresentation('Série [DV] [L]'), { title: 'Série [DV] [L]', quality: '' });
   assert.deepEqual(catalogPresentation('Filme [H265]'), { title: 'Filme [H265]', quality: '' });
   assert.deepEqual(catalogPresentation('[HD]'), { title: '[HD]', quality: 'HD' });
+});
+
+import { detailEpisodes, detailPlayTarget } from '../src/contentDetails';
+test('content details preserve the complete episode queue and supplied descriptions', () => {
+  const episodes = detailEpisodes({
+    info: {
+      name: 'Série',
+      cover: 'https://images.test/cover',
+      plot: '',
+      cast: '',
+      director: '',
+      genre: '',
+      releaseDate: '',
+      rating: '',
+    },
+    seasons: [
+      {
+        number: 1,
+        episodes: [
+          {
+            id: '1',
+            title: 'Início',
+            url: 'https://test/1.mp4',
+            seasonNumber: 1,
+            episodeNumber: 1,
+            containerExtension: 'mp4',
+            info: { plot: 'Piloto', duration: '45:00' },
+          },
+        ],
+      },
+      {
+        number: 2,
+        episodes: [
+          {
+            id: '2',
+            title: 'Retorno',
+            url: 'https://test/2.mp4',
+            seasonNumber: 2,
+            episodeNumber: 1,
+            containerExtension: 'mp4',
+          },
+        ],
+      },
+    ],
+  });
+  assert.deepEqual(
+    episodes.map((e) => [e.id, e.seasonNumber]),
+    [
+      ['episode-1', 1],
+      ['episode-2', 2],
+    ],
+  );
+  assert.equal(episodes[0].plot, 'Piloto');
+  assert.equal(episodes[0].tvgLogo, 'https://images.test/cover');
+  const movie = {
+    id: 'movie',
+    name: 'Filme',
+    category: 'MOVIE' as const,
+    url: 'https://test/movie.mp4',
+  };
+  assert.equal(
+    detailPlayTarget(movie, episodes, true, {
+      recent: ['episode-2'],
+      progress: { 'episode-2': 123 },
+    })?.id,
+    'episode-2',
+  );
+  assert.equal(
+    detailPlayTarget(movie, episodes, true, { recent: ['episode-2'], progress: { 'episode-2': 0 } })
+      ?.id,
+    'episode-1',
+  );
+});
+test('series details never play the Xtream series placeholder or invent episodes', () => {
+  const series = {
+    id: 's',
+    name: 'Série',
+    url: 'https://test/series/user/pass/1',
+    category: 'SERIES' as const,
+  };
+  const library = { recent: [], progress: {} };
+  assert.equal(detailPlayTarget(series, null, true, library), null);
+  assert.equal(detailPlayTarget(series, [], true, library), null);
+  assert.equal(detailPlayTarget(series, null, false, library), series);
+});
+test('movie details retain original playback URL and HTTP headers', () => {
+  const movie = {
+    id: 'm',
+    name: 'Filme',
+    url: 'https://test/movie.mp4',
+    httpHeaders: { Referer: 'https://test/' },
+    category: 'MOVIE' as const,
+  };
+  assert.equal(detailPlayTarget(movie, null, false, { recent: [], progress: {} }), movie);
+});
+
+import { gridNeighbor } from '../src/catalogGridFocus';
+test('catalog grid resolves one D-pad press to the adjacent card and scroll target', () => {
+  assert.equal(gridNeighbor(0, 'down', 20, 6), 6);
+  assert.equal(gridNeighbor(6, 'up', 20, 6), 0);
+  assert.equal(gridNeighbor(7, 'right', 20, 6), 8);
+  assert.equal(gridNeighbor(7, 'left', 20, 6), 6);
+  assert.equal(gridNeighbor(5, 'right', 20, 6), undefined);
+  assert.equal(gridNeighbor(6, 'left', 20, 6), undefined);
+  assert.equal(gridNeighbor(18, 'down', 20, 6), undefined);
+  assert.equal(gridNeighbor(0, 'up', 20, 6), undefined);
+  assert.equal(gridNeighbor(2, 'down', 20, 1), 3);
+  assert.equal(gridNeighbor(-1, 'down', 20, 6), undefined);
 });

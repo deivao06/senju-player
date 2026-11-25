@@ -1,5 +1,53 @@
 # Pendências TV — 30/10/2026
 
+## Atualização — 24/11/2026 (cache, harden e Impeccable)
+
+O loading ao trocar de provedor no menu lateral foi corrigido no Fire TV: os
+snapshots passam a ser reaproveitados em memória por provedor e tipo, sem nova
+leitura do disco nem spinner quando o conteúdo já foi carregado. Biblioteca por
+provedor e limpeza seletiva acompanham o mesmo mapa. Detalhes, episódios e a
+primeira consulta continuam sob demanda. Ver `docs/CACHE-TV.md`.
+
+Fases do Impeccable executadas em sequência, sem alterar o app web:
+- **harden:** leitura de biblioteca tolerante a JSON corrompido, esquema inválido
+  e limites nos dois apps; registro original é preservado/quarentenado antes de
+  uma nova gravação. No Smart TV há opção explícita no perfil para descartar a
+  biblioteca inválida e voltar a salvar.
+- **typeset:** escala de leitura à distância aplicada em detalhes/player do Fire TV
+  e variáveis `--type-*` no CSS do Smart TV.
+- **optimize:** callbacks estáveis nos cards, chaves de lista por identidade,
+  listener de teclado anexado uma vez no Smart TV e refs de callbacks no player.
+- **layout:** tokens do `DESIGN.md` no CSS do Smart TV, preenchimento de foco em
+  `.poster`/`.episode-row`, margem de segurança por overscan/cutout e oito colunas
+  em telas muito largas; acento do Fire TV unificado ao token.
+- **document:** `DESIGN.md`, `CACHE-TV.md`, `SMART-TV.md` e `VALIDACAO.md` atualizados.
+- **polish:** verificação no navegador integrado com provedor fictício: lista
+  restaurada após reload, uma ArrowDown de `#item-0` para `#item-6` com rolagem,
+  foco com preenchimento/contorno e zero erros de console. Não é validação em TV.
+
+Typecheck dos dois apps, 42 testes locais e build Vite do Smart TV passaram.
+Nenhum APK/IPK/WGT foi gerado ou instalado nesta rodada, e nada foi testado em
+hardware. O usuário tem somente Fire Stick: restam medir a troca de provedores no
+AFTSSS, a navegação D-pad nas bordas da grade e a legibilidade em 960×540/640×360.
+LG/Samsung seguem sem validação de D-pad, IME, decoder, persistência ou foco.
+
+## Atualização — 24/11/2026
+
+Navegação de grade dos apps de TV ajustada: uma única pressão de Baixo agora
+seleciona o card/poster da linha seguinte e rola junto, sem exigir uma segunda
+pressão apenas para rolar. Fire TV passa a declarar `nextFocusDown/Up/Left/Right`
+calculados pela grade; Smart TV resolve o vizinho antes da navegação geométrica.
+Testes locais, typecheck dos dois apps e build Smart TV passaram. Confirmação no
+Fire Stick e em LG/Samsung reais continua pendente.
+
+## Atualização — 03/11/2026
+
+Tela Fire TV de detalhes de filmes/séries implementada: capa, sinopse, metadados,
+fundo quando fornecido, ações assistir/continuar/favorito e temporadas com episódios
+em lista virtualizada. Filme passa pelos detalhes antes do player. Fila completa
+e continuidade de episódios preservadas. Typecheck,47 testes e builds web/Smart TV
+passaram. Validação visual/D-pad desta tela em TV continua pendente.
+
 ## Resumo atual
 
 - **Fire TV:** Home/UI/player/cache implementados; APK de teste instalado no AFTSSS e publicado. Validação de fluxos específicos registrada, sem certificação geral de desempenho/formatos/offline/auto-next natural.
@@ -121,3 +169,8 @@ Home instalada e conferida por D-pad: Netflix e Prime Video abrem seus próprios
 catálogos; Voltar restaura foco na plataforma, Up alcança abas. Cinco logos visíveis,
 34testes e APKs aprovados. App deixado na Home, Prime Video focado, sem reprodução.
 Limites de teste em VALIDACAO.md;640x360 e perfis de fonte ausente ainda pendentes.
+
+
+03/11/2026: APK com detalhes instalado no Fire Stick a pedido do usuário
+(install -r Success, Activity Status: ok). Validação visual/D-pad da nova tela
+ainda pendente; nenhum vídeo iniciado automaticamente.

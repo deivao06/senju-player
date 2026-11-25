@@ -38,9 +38,11 @@ pnpm smart:build:tizen         # apps/smart-tv/build/tizen
 Setas, Enter e Escape permitem experimentar a navegação no computador. Campos de
 texto preservam as setas horizontais para edição; o IME nativo ainda precisa de
 teste. Voltar reconhece 461 (LG) e 10009 (Samsung). Drawers limitam o movimento aos
-controles visíveis dentro deles. Paginação explícita: até 30 capas por página,
-com lazy loading; catálogos já consultados ficam em memória até sair da lista.
-Não há download de vídeo nem cache persistente nesta versão.
+controles visíveis dentro deles. O resolvedor de grade resolve o vizinho antes da
+navegação geométrica, para que uma pressão de Baixo selecione e role junto.
+Paginação explícita: até 30 capas por página, com lazy loading; catálogos já
+consultados ficam em memória até sair da lista. Não há download de vídeo nem
+cache persistente de catálogo nesta versão.
 
 ## Reprodução
 
@@ -58,10 +60,15 @@ Não há download de vídeo nem cache persistente nesta versão.
 
 ## Credenciais e rede
 
-Credenciais e URLs só ficam na memória da sessão. Não gravamos senhas/tokens em
-localStorage, IndexedDB ou logs. Fechar/recarregar exige conectar novamente.
-Persistência segura, seleção de múltiplas listas, favoritos, histórico, progresso
-e cache criptografado exigem adaptação posterior; o módulo Android não é portátil.
+Credenciais e URLs das listas só ficam na memória da sessão. Não gravamos
+senhas/tokens em localStorage, IndexedDB ou logs; fechar/recarregar exige
+conectar novamente. Favoritos, histórico, progresso e vínculos de episódios são
+salvos em IndexedDB com AES-GCM, cuja chave é criada no dispositivo; o registro
+é validado na leitura, limitado por tamanho e, quando inválido, preservado como
+`library:<id>:invalid:*` antes de qualquer nova gravação. O perfil oferece a
+ação explícita “Descartar biblioteca inválida e salvar novamente”. Catálogo
+persistente e cache criptografado seguem sem implementação; o módulo Android não
+é portátil. Sem versionamento/migração de esquema nesta versão.
 
 Requisições são diretas ao provedor; não dependem do proxy do Senju Web. O servidor
 precisa permitir o acesso pelo ambiente web da TV. CORS, HTTP/HTTPS, TLS, URLs com
@@ -115,8 +122,11 @@ Build, teste do navegador e teste de hardware são evidências diferentes.
 A primeira tentativa do Chromium falhou por bibliotecas ausentes. Após extrair as bibliotecas somente em /tmp, o teste de navegador passou com respostas Xtream fictícias: login/Home, temporadas, Voltar, drawer, busca vazia e paginação. Isso não valida o runtime/decoder da TV.
 A próxima etapa essencial é reproduzir amostras reais de HLS, MPEG-TS, filmes e
 séries numa LG e numa Samsung, incluindo entrada de texto e retorno do player.
-Depois: foco remoto completo, segurança/persistência, biblioteca pessoal, cache e
-paridade visual. Desempenho e memória precisam de medição em modelo de entrada.
+Depois: foco remoto completo, validação da biblioteca pessoal em IndexedDB
+(inclusive recuperação de registro inválido), cache persistente e paridade
+visual. Desempenho e memória precisam de medição em modelo de entrada. A asserção
+de uma pressão de Baixo em `browser-check.mjs` ainda não foi executada neste
+ambiente: faltam bibliotecas nativas do Chromium no WSL.
 
 ## Fontes oficiais consultadas
 

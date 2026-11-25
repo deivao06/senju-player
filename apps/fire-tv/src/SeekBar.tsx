@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   },
   focus: { borderColor: colors.focus, backgroundColor: '#103020f2' },
   times: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  time: { color: '#fff', fontSize: 12, fontVariant: ['tabular-nums'] },
+  time: { color: '#fff', fontSize: 13, lineHeight: 18, fontVariant: ['tabular-nums'] },
   track: { height: 5, borderRadius: 3, backgroundColor: '#b2cabb66' },
   fill: { height: 5, backgroundColor: colors.accent, borderRadius: 3 },
   thumb: {

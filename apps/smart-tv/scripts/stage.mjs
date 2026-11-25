@@ -1,12 +1,12 @@
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import {fileURLToPath} from 'node:url';
-process.chdir(fileURLToPath(new URL('../',import.meta.url)));
+import { fileURLToPath } from 'node:url';
+process.chdir(fileURLToPath(new URL('../', import.meta.url)));
 import { deflateSync } from 'node:zlib';
 const platform = process.argv[2];
 if (!['webos', 'tizen'].includes(platform)) throw new Error('Use webos ou tizen.');
 const out = resolve('build', platform);
-await rm(out, {recursive:true,force:true});
+await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
 await cp('dist', out, { recursive: true });
 await cp(`platforms/${platform}`, out, { recursive: true });

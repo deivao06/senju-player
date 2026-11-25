@@ -207,7 +207,7 @@ export function Player({
       {loading && !error && (
         <View style={styles.loadingContainer} pointerEvents="none">
           <View style={styles.loading}>
-            <ActivityIndicator color="#38e883" size="small" />
+            <ActivityIndicator color={colors.accent} size="small" />
             <Text style={styles.loadingText}>Carregando vídeo…</Text>
           </View>
         </View>

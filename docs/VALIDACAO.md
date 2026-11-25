@@ -830,3 +830,121 @@ keystore versionada é a chave padrão de desenvolvimento Android, sem uso para
 produção. Repositório de origem já público; revisão dos arquivos previstos não
 encontrou padrões de tokens/chaves privadas. A autorização atual inclui commit
 e push do estado completo do projeto, preservando a migração por renomes Git.
+
+
+## 2026-11-03 — Detalhes de filmes/séries no Fire TV
+
+- Página nativa `ContentDetailsScreen`: capa, título, sinopse, backdrop opcional da
+fonte, assistir/continuar/favorito e temporadas com lista virtualizada de episódios.
+- Xtream: nova consulta sob demanda get_vod_info, normalização de metadados
+compartilhada com get_series_info, tolerância a informação ausente sem inventar
+sinopse/imagem. M3U mantém reprodução e apenas os metadados disponíveis.
+- Controle: leitura completa da sinopse em painel com rolagem incremental; fila
+completa de episódios preservada, continuidade pela biblioteca e retorno aos detalhes.
+- `pnpm tv:typecheck`: PASS. `pnpm test`:47 testes PASS
+(10IPTV+24runtime Fire TV+6cache+7Smart TV).
+- `pnpm build` e `pnpm smart:build`: PASS; aviso web >500kB já existente.
+- Revisão estática independente corrigiu competição de foco ao fechar sinopse;
+correção confirmada em código, sem teste nativo.
+- Sem novas capturas nativas, sem instalação ou navegação desta versão na TV.
+Não declarar aprovação visual, codecs, D-pad ou desempenho com base nesses checks.
+- Mudanças desta etapa ainda locais, sem commit/push ou publicação de release.
+
+APK final sideload: BUILD SUCCESSFUL (21s no último build incremental), apksigner
+verify e zipalign PASS. Artefato em `apps/fire-tv/android/app/build/outputs/apk/sideload/app-sideload.apk`.
+SHA-256: `1d75f61efc2872f8f25b96483837bf8a577657d296e08de9c31f0f8fe0d2994a`. Não instalado/publicado nesta rodada.
+
+
+## 2026-11-03 — Instalação autorizada da tela de detalhes
+
+Usuário solicitou explicitamente “joga la no firestick”. Fire Stick AFTSSS
+conectado por ADB. `adb install -r` retornou Success e `am start -W` retornou
+Status: ok para `com.senju.tv.sideload/com.senju.tv.MainActivity`. APK SHA-256
+1d75f61efc2872f8f25b96483837bf8a577657d296e08de9c31f0f8fe0d2994a.
+Instalação preservou os dados existentes, sem desinstalar ou limpar armazenamento.
+Nenhum vídeo iniciado; teste visual/funcional da tela de detalhes pelo usuário
+segue pendente. Início da Activity não mede carregamento do catálogo.
+
+## 2026-11-24 — Navegação de grade nos apps de TV
+
+- Fire TV: `catalogGridFocus.ts` resolve o vizinho da grade e `CatalogCard` recebe
+  `nextFocusDown/Up/Left/Right`; as referências dos cards são mantidas por índice
+  para que o D-pad selecione e role na mesma pressão. Menu/cabeçalho continuam
+  como fallback nas bordas.
+- Smart TV: `gridFocus.ts` é usado por `remote.ts` antes da navegação geométrica;
+  o foco vai direto para o poster adjacente e `scrollIntoView` acompanha. Uma
+  asserção de uma pressão de Baixo foi acrescentada a `browser-check.mjs`.
+- `node --import tsx` nos quatro suites: 53 testes PASS (10 IPTV, 25 Fire TV,
+  6 cache, 12 Smart TV). `tsc --noEmit` dos dois apps e `vite build` Smart TV PASS.
+- `smart:test:browser` não rodou nesta rodada: o Chromium instalado no WSL exige
+  bibliotecas de sistema ausentes (`libnspr4.so`). A asserção nova ainda não tem
+  execução em navegador, e nada disso substitui teste no controle/tvs reais.
+- Nenhum layout, paleta, tipografia ou biblioteca/persistência foi alterado nesta
+  etapa; nenhum APK/IPK/WGT foi gerado ou instalado.
+
+## 2026-11-24 — Cache em memória, persistência e fases do Impeccable
+
+Sintoma relatado: trocar de provedor no menu lateral do Fire TV ainda mostrava
+loading dos filmes/séries depois do primeiro acesso. A causa não era ausência do
+cache em disco: a troca limpava o estado em memória e relia todas as páginas com
+indicador de carregamento, além de considerar snapshots com seis horas ou mais
+como candidatos a refresh imediato.
+
+`catalogMemory.ts` mantém um snapshot por provedor e tipo (`catalogKey`) e um
+mapa de tipos carregados por fonte. `App.tsx` usa um caminho rápido síncrono para
+snapshots em memória, mantém a biblioteca por `source.id` e limpa somente as
+entradas afetadas ao trocar/remover lista ou ao usar Limpar cache. M3U é tratado
+como uma chave `ALL` combinada. O spinner não aparece nessa troca; a atualização
+de cache antigo continua em segundo plano e preserva os itens salvos. O módulo
+`nativeCatalogCache`, o formato em disco e a criptografia não foram alterados.
+
+Fases do Impeccable executadas em sequência nesta rodada:
+- **harden:** `librarySchema.ts` (Fire TV) e `normalizeLibrary` em `persistence.ts`
+  (Smart TV) aceitam registros legados, descartam campos inválidos e limitam
+  favoritos/histórico/progresso. Registros corrompidos ou com esquema errado são
+  quarentenados antes de uma nova gravação. O Fire TV informa a recuperação; o
+  Smart TV bloqueia a escrita daquela fonte até o usuário escolher, no perfil,
+  “Descartar biblioteca inválida e salvar novamente”. Falha de storage é
+  diferenciada de dado inválido, sem esvaziar silenciosamente a biblioteca.
+- **typeset:** detalhes do Fire TV com título 22–28sp, sinopse 14/22 e metadados
+  12/17; player com rótulos 11–12sp e tempos 13/18. Smart TV passa a usar
+  `--type-body`, `--type-label` e `--type-meta`.
+- **optimize:** `CatalogCard` recebe callbacks estáveis e chaves de lista por
+  `category:id`; handlers em refs evitam remontagem; o listener de teclado do
+  Smart TV é registrado uma única vez e `Playback` usa refs para callbacks.
+- **layout:** o CSS do Smart TV usa os tokens do `DESIGN.md`, restaura
+  preenchimento de foco em pôsteres/linhas de episódio e adiciona margem de
+  segurança por overscan/cutout; acento `#38e883` do Fire TV substituído por
+  `colors.accent` (`#34ef7d`). Grade Smart TV ganha oito colunas acima de 2200px.
+- **document:** `DESIGN.md`, `CACHE-TV.md`, `SMART-TV.md`, `TV-TODO.md` e este
+  arquivo atualizados. A confirmação para mexer no `DESIGN.md` foi dada antes da
+  edição; apenas trechos desatualizados foram alterados.
+
+Validação local: `tsc --noEmit` dos dois apps PASS; `node --import tsx --test`
+nos suites dos dois apps: 42 testes PASS (incluindo cache em memória por
+provedor, chave M3U `ALL`, quarentena/limites de biblioteca e recuperação sem
+mutar os dados); `vite build` do Smart TV PASS; `git diff --check` PASS. Novos
+casos de leitura de biblioteca cobrem JSON corrompido, tipos errados e limites.
+Os comandos do launcher `impeccable` não resolveram a raiz do projeto no
+Windows/WSL; as fases foram executadas lendo os playbooks diretamente.
+
+**Polish com navegador do ambiente (não é TV):** o build do Smart TV foi servido
+com um provedor Xtream fictício (60 filmes) no navegador integrado do OpenCode.
+Após recarregar, a lista salva foi restaurada automaticamente do IndexedDB
+protegido; a grade mostrou 30 pôsteres paginados de 60 itens. Com `#item-0`
+focado, uma única ArrowDown moveu o foco para `#item-6` e rolou a página
+(`scrollY` 0 → 59), sem console errors. O pôster focado calculou fundo
+`rgb(32, 76, 51)` (`#204c33`) e contorno `rgb(194, 255, 216)` (`#c2ffd8`),
+confirmando a regra de foco por preenchimento+contorno. `--type-meta` foi
+ajustado para `0.9rem` nesta passada e o build/testes foram repetidos. O
+servidor de fixture ficou em `apps/smart-tv/build` (pasta ignorada) e foi
+encerrado. Isso não valida Chromium 85/87, LG/Samsung, decoder, IME, D-pad de
+controle real, nem a leitura em 960×540 ou 640×360 de uma TV.
+
+Não houve instalação, geração de APK/IPK/WGT, conexão com TV, captura ou medição
+de desempenho nesta rodada. O usuário tem somente Fire Stick: a ausência do
+spinner na troca de provedores, a navegação D-pad nas bordas da grade, a
+legibilidade em 960×540/640×360 e a recuperação de biblioteca ainda precisam de
+validação no AFTSSS. LG/Samsung seguem sem teste de D-pad, IME, decoder, foco ou
+persistência. Nada foi commitado ou enviado, e nenhuma alteração local foi
+descartada.

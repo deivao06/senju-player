@@ -442,3 +442,23 @@ nas configurações. A janela de30dias aparece junto à contagem; explicação d
 é aberta pelo botão de informações. Busca de novidades usa texto compacto.
 
 Créditos dos logos: apps/fire-tv/src/assets/platforms/SOURCES.md e sidecars de origem.
+
+
+## Tela de detalhes de filmes e séries — 03/11/2026
+
+Ao selecionar filme/série, o Fire TV abre uma página de detalhes com capa, título,
+sinopse e informações fornecidas pela fonte. O fundo aparece somente quando há
+backdrop HTTP(S) informado pelo provedor; sem nova consulta a serviços externos.
+Filmes usam `get_vod_info`; séries mantêm `get_series_info`. Em M3U, apenas dados
+existentes são exibidos e a reprodução é direta, sem episódios inventados.
+
+Ações: assistir/continuar, favorito e leitura integral da sinopse. Filmes sem
+metadados continuam reproduzíveis. Séries Xtream sem episódios não reproduzem a
+URL genérica de série como se fosse um vídeo. Abaixo do cabeçalho, temporadas e
+lista virtualizada de episódios com imagem, descrição e duração quando fornecidas.
+A fila completa permanece disponível para próximo/anterior e avanço automático.
+
+O botão Continuar busca o episódio mais recente com progresso positivo. Fechar
+o player restaura o contexto dos detalhes, e Voltar aos detalhes retorna ao
+catálogo. A navegação nativa e o visual desta tela ainda exigem teste em aparelho;
+compilação e testes de regras não equivalem a aprovação visual ou de desempenho.

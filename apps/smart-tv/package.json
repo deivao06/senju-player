@@ -8,19 +8,23 @@
     "build": "tsc --noEmit && vite build",
     "build:webos": "pnpm build && node scripts/stage.mjs webos",
     "build:tizen": "pnpm build && node scripts/stage.mjs tizen",
-    "test": "node --import tsx tests/runtime.test.ts"
+    "test": "node --import tsx tests/runtime.test.ts",
+    "check:environment": "node scripts/check-environment.mjs",
+    "test:browser": "node scripts/browser-check.mjs",
+    "benchmark": "node --import tsx scripts/catalog-benchmark.ts"
   },
   "dependencies": {
+    "@senju/iptv": "workspace:*",
     "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "@senju/iptv": "workspace:*"
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "4.7.0",
+    "playwright-core": "1.56.1",
+    "tsx": "4.20.6",
     "typescript": "5.9.3",
-    "vite": "6.4.1",
-    "tsx": "4.20.6"
+    "vite": "6.4.1"
   }
 }

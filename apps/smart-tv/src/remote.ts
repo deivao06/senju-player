@@ -1,3 +1,5 @@
+import { gridNeighbor, type GridDirection } from './gridFocus';
+
 export function isBack(event: Pick<KeyboardEvent, 'key' | 'keyCode'>) {
   return (
     event.key === 'Escape' ||
@@ -7,14 +9,32 @@ export function isBack(event: Pick<KeyboardEvent, 'key' | 'keyCode'>) {
   );
 }
 export type Direction = 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown';
+const gridDirection = (direction: Direction) =>
+  direction.replace('Arrow', '').toLowerCase() as GridDirection;
 /** Geometry-based movement, restricted to the active dialog/screen. Native IME owns text fields. */
 export function moveFocus(direction: Direction) {
   const current = document.activeElement as HTMLElement | null;
   if (
-    current?.matches('input,textarea') &&
+    current?.matches('input:not([type=checkbox]):not([type=range]),textarea') &&
     (direction === 'ArrowLeft' || direction === 'ArrowRight')
   )
     return false;
+  // In the catalog, resolve the exact adjacent poster first: focus and scroll happen
+  // in the same key press instead of the browser scrolling before focus moves.
+  const poster = current?.classList.contains('poster') ? current : null;
+  const grid = poster?.closest<HTMLElement>('.grid');
+  if (poster && grid) {
+    const posters = Array.from(grid.querySelectorAll<HTMLElement>('.poster'));
+    const index = posters.indexOf(poster);
+    const columns = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length;
+    const next = gridNeighbor(index, gridDirection(direction), posters.length, columns);
+    if (next !== undefined) {
+      const target = posters[next];
+      target?.focus();
+      target?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      return true;
+    }
+  }
   const scope = document.querySelector('[data-focus-scope]') || document;
   const nodes = Array.from(
     scope.querySelectorAll<HTMLElement>(

@@ -1,20 +1,33 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  M3UParserService,
-  XtreamService,
   contentLabels,
-  orderByLatest,
-  platformForGroup,
-  itemGroups,
   type PlaylistItem,
   type ItemCategory,
   type SavedPlaylist,
-  type Season,
 } from '@senju/iptv';
-import { transport } from './transport';
 import { initializePlatform } from './player';
 import { isBack, moveFocus, type Direction } from './remote';
 import { Playback } from './Playback';
+import { Details } from './Details';
+import { loadCatalog } from './catalogLoader';
+import {
+  emptyLibrary,
+  favoriteItem,
+  watchedItem,
+  readProfiles,
+  writeProfiles,
+  readLibraryResult,
+  writeLibrary,
+  removeLibrary,
+  type Library,
+} from './persistence';
+import {
+  EMPTY_CATALOG,
+  GROUP_PAGE_SIZE,
+  PAGE_SIZE,
+  indexCatalog,
+  selectCatalog,
+} from './catalogIndex';
 const types: ItemCategory[] = ['CHANNEL', 'MOVIE', 'SERIES'];
 const featured = [
   ['netflix', 'Netflix'],
@@ -23,7 +36,7 @@ const featured = [
   ['disney', 'Disney+'],
   ['max', 'HBO'],
 ];
-const PAGE_SIZE = 30;
+
 export function App() {
   const [source, setSource] = useState<SavedPlaylist>(),
     [kind, setKind] = useState<'XTREAM' | 'M3U'>('XTREAM');
@@ -37,23 +50,94 @@ export function App() {
   const [drawer, setDrawer] = useState<'menu' | 'profile' | null>(null),
     [loading, setLoading] = useState(false),
     [error, setError] = useState('');
-  const [seasons, setSeasons] = useState<Season[]>([]),
-    [season, setSeason] = useState(0),
-    [seriesTitle, setSeriesTitle] = useState('');
+  const [detailItem, setDetailItem] = useState<PlaylistItem>();
+  const [saved, setSaved] = useState<SavedPlaylist[]>([]);
+  const [storageReady, setStorageReady] = useState(false);
+  const [platformReady, setPlatformReady] = useState(false);
+  const [rememberList, setRememberList] = useState(true);
+  const [notice, setNotice] = useState('');
+  const [libraryBlocked, setLibraryBlocked] = useState(false);
+  const [library, setLibrary] = useState<Library>(emptyLibrary);
+  const libraryRef = useRef(library);
+  libraryRef.current = library;
+  const blockedLibraries = useRef(new Set<string>());
+  const persistence = useRef(Promise.resolve());
+  const [libraryView, setLibraryView] = useState<'all' | 'favorites' | 'recent'>('all');
   const [playing, setPlaying] = useState<PlaylistItem>(),
     [queue, setQueue] = useState<PlaylistItem[]>([]);
-  const session = useRef(new AbortController()),
+  const backHandler = useRef<() => void>(() => {}),
+    session = useRef(new AbortController()),
     generation = useRef(0),
     lastFocus = useRef<string>('menu'),
     seriesOrigin = useRef('menu');
+  const [groupsOpen, setGroupsOpen] = useState(false);
+  const [groupPage, setGroupPage] = useState(0);
   const [platformError, setPlatformError] = useState('');
   const retry = useRef<(() => void) | null>(null);
   useEffect(() => {
-    void initializePlatform().catch(() =>
-      setPlatformError('Player Samsung indisponível. Feche e abra o aplicativo novamente.'),
-    );
-    return () => session.current.abort();
+    let disposed = false;
+    const platform = initializePlatform()
+      .then(() => {
+        if (!disposed) setPlatformReady(true);
+        return true;
+      })
+      .catch(() => {
+        if (!disposed)
+          setPlatformError('Player Samsung indisponível. Feche e abra o aplicativo novamente.');
+        return false;
+      });
+    const storage = readProfiles()
+      .then((profiles) => {
+        if (disposed) return [];
+        setSaved(profiles);
+        setStorageReady(true);
+        return profiles;
+      })
+      .catch(() => {
+        if (!disposed)
+          setNotice('Armazenamento protegido indisponível; dados somente nesta sessão.');
+        return [];
+      });
+    void Promise.all([platform, storage]).then(([supported, profiles]) => {
+      if (!disposed && supported && profiles.length === 1)
+        void load('CHANNEL', profiles[0], false, false);
+    });
+    return () => {
+      disposed = true;
+      session.current.abort();
+    };
   }, []);
+  function updateLibrary(next: Library) {
+    libraryRef.current = next;
+    setLibrary(next);
+    if (!source || !storageReady) return;
+    const id = source.id;
+    if (blockedLibraries.current.has(id)) {
+      setNotice((current) =>
+        current.includes('inválida')
+          ? current
+          : 'Biblioteca inválida preservada. Use “Descartar biblioteca inválida” no perfil para voltar a salvar.',
+      );
+      return;
+    }
+    persistence.current = persistence.current.catch(() => {}).then(() => writeLibrary(id, next));
+    void persistence.current.catch(() =>
+      setNotice('Não foi possível salvar a biblioteca; ela continua disponível nesta sessão.'),
+    );
+  }
+  function resetLibrary() {
+    if (!source) return;
+    const id = source.id;
+    blockedLibraries.current.delete(id);
+    setLibraryBlocked(false);
+    setNotice('');
+    persistence.current = persistence.current
+      .catch(() => {})
+      .then(() => writeLibrary(id, libraryRef.current));
+    void persistence.current.catch(() =>
+      setNotice('Não foi possível salvar a biblioteca; tente novamente no perfil.'),
+    );
+  }
   useEffect(() => {
     if (!playing && !loading) {
       requestAnimationFrame(() => {
@@ -63,7 +147,7 @@ export function App() {
         (target || document.querySelector<HTMLElement>('button:not(:disabled), input'))?.focus();
       });
     }
-  }, [playing, loading, screen, drawer, page, seasons, season, source]);
+  }, [playing, loading, screen, drawer, page, detailItem, source]);
   function back() {
     if (playing) {
       setPlaying(undefined);
@@ -79,9 +163,9 @@ export function App() {
       setDrawer(null);
       return;
     }
-    if (seasons.length) {
+    if (detailItem) {
       lastFocus.current = seriesOrigin.current;
-      setSeasons([]);
+      setDetailItem(undefined);
       return;
     }
     if (screen === 'catalog') {
@@ -91,6 +175,7 @@ export function App() {
     }
     if (source) setDrawer('profile');
   }
+  backHandler.current = back;
   useEffect(() => {
     function key(e: KeyboardEvent) {
       if (drawer && e.key === 'Tab') {
@@ -100,7 +185,7 @@ export function App() {
       }
       if (isBack(e)) {
         e.preventDefault();
-        back();
+        backHandler.current();
         return;
       }
       // Let range inputs and text editing consume horizontal keys.
@@ -116,51 +201,67 @@ export function App() {
     }
     document.addEventListener('keydown', key);
     return () => document.removeEventListener('keydown', key);
-  });
+  }, [drawer]);
   function remember(e: React.FocusEvent<HTMLElement>) {
     if (e.target.id && !drawer && !playing) lastFocus.current = e.target.id;
   }
-  async function load(type: ItemCategory, s = source, force = false) {
+  async function load(type: ItemCategory, s = source, force = false, remember = false) {
     if (!s) return;
     const task = ++generation.current;
     session.current.abort();
     session.current = new AbortController();
     retry.current = () => {
-      void load(type, s, force);
+      void load(type, s, force, remember);
     };
     setLoading(true);
     setError('');
     setDrawer(null);
     setScreen('catalog');
     setCategory(type);
-    setSeasons([]);
+    setDetailItem(undefined);
     setQuery('');
     setPage(0);
     lastFocus.current = 'item-0';
     try {
-      let next = catalog;
-      if (force || !catalog[type] || s !== source) {
-        const request = transport(session.current.signal);
-        if (s.type === 'M3U') {
-          const items = await new M3UParserService(request).fetchAndParse(s.data as string);
-          next = Object.fromEntries(
-            types.map((t) => [t, orderByLatest(items.filter((i) => i.category === t))]),
+      let nextLibrary = libraryRef.current;
+      if (s.id !== source?.id) {
+        const read = await persistence.current
+          .catch(() => {})
+          .then(() => readLibraryResult(s.id))
+          .catch(() => ({ library: emptyLibrary(), recovered: false, unavailable: true }));
+        if (task !== generation.current) return;
+        nextLibrary = read.library;
+        if (read.recovered) {
+          blockedLibraries.current.add(s.id);
+          setLibraryBlocked(true);
+          setNotice(
+            'Biblioteca salva inválida: dados legíveis recuperados e registro original preservado. Descarte no perfil para voltar a salvar.',
           );
+        } else if (read.unavailable) {
+          setNotice('Armazenamento protegido indisponível; biblioteca somente nesta sessão.');
         } else {
-          const api = new XtreamService(request),
-            credentials = s.data as Parameters<XtreamService['fetchChannels']>[0];
-          if (s !== source && !(await api.loginCheck(credentials)))
-            throw new Error('Lista não autenticada.');
-          const items = await (type === 'CHANNEL'
-            ? api.fetchChannels(credentials)
-            : type === 'MOVIE'
-              ? api.fetchMovies(credentials)
-              : api.fetchSeries(credentials));
-          next = { ...(s === source ? catalog : {}), [type]: orderByLatest(items) };
+          blockedLibraries.current.delete(s.id);
+          setLibraryBlocked(false);
         }
       }
       if (task !== generation.current) return;
+      let next = catalog;
+      if (force || !catalog[type] || s !== source) {
+        const prepared = await loadCatalog(s, type, s.id !== source?.id, session.current.signal);
+        next = s.id === source?.id ? { ...catalog } : {};
+        for (const [key, entry] of Object.entries(prepared))
+          if (entry) next[key as ItemCategory] = entry.items;
+      }
+      if (task !== generation.current) return;
+      if (remember && storageReady && !saved.some((profile) => profile.id === s.id)) {
+        const profiles = [...saved, s];
+        await writeProfiles(profiles);
+        if (task !== generation.current) return;
+        setSaved(profiles);
+      }
       setCatalog(next);
+      setLibrary(nextLibrary);
+      libraryRef.current = nextLibrary;
       setSource(s);
       if (s !== source) {
         setScreen('home');
@@ -176,6 +277,7 @@ export function App() {
     }
   }
   function openCategory(type: ItemCategory, p = '') {
+    setLibraryView('all');
     setPlatform(p);
     setGroup('');
     void load(type);
@@ -185,8 +287,10 @@ export function App() {
     generation.current++;
     session.current.abort();
     setSource(undefined);
+    setLibrary(emptyLibrary());
+    setLibraryView('all');
     setCatalog({});
-    setSeasons([]);
+    setDetailItem(undefined);
     setQueue([]);
     setPlaying(undefined);
     setLoading(false);
@@ -206,7 +310,7 @@ export function App() {
       return;
     }
     const s: SavedPlaylist = {
-      id: 'session',
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       name: String(data.get('name') || 'Minha lista'),
       type: kind,
       data:
@@ -220,92 +324,132 @@ export function App() {
     };
     setPlatform('');
     setGroup('');
-    void load('CHANNEL', s);
-  }
-  const deferredQuery=useDeferredValue(query);
-  const items = useMemo(() => {
-    if (seasons.length)
-      return (seasons[season]?.episodes || []).map((ep) => ({
-        id: ep.id,
-        name: ep.title,
-        url: ep.url,
-        category: 'MOVIE' as const,
-        tvgLogo: ep.info?.movie_image,
-      }));
-    const q = deferredQuery.trim().toLocaleLowerCase();
-    return (catalog[category] || []).filter(
-      (item) =>
-        (!platform || itemGroups(item).some((g) => platformForGroup(g) === platform)) &&
-        (!group || itemGroups(item).includes(group)) &&
-        (!q || item.name.toLocaleLowerCase().includes(q)),
+    const existing = saved.find(
+      (profile) =>
+        profile.type === s.type && JSON.stringify(profile.data) === JSON.stringify(s.data),
     );
-  }, [catalog, category, platform, group, deferredQuery, seasons, season]);
-  const groups = useMemo(
-    () => [...new Set((catalog[category] || []).flatMap(itemGroups))].sort(),
-    [catalog, category],
-  );
-  async function select(item: PlaylistItem) {
-    if (item.category !== 'SERIES' || source?.type !== 'XTREAM') {
-      setQueue(
-        seasons.length
-          ? seasons.flatMap((s) =>
-              s.episodes.map((e) => ({
-                id: e.id,
-                name: e.title,
-                url: e.url,
-                category: 'MOVIE' as const,
-              })),
-            )
-          : [],
-      );
-      setPlaying(item);
+    if (rememberList && storageReady && !existing && saved.length >= 5) {
+      setError('Você pode salvar até cinco listas. Remova uma lista antes de adicionar outra.');
       return;
     }
-    retry.current = () => {
-      void select(item);
-    };
-    seriesOrigin.current = lastFocus.current;
-    const task = ++generation.current;
-    session.current.abort();
-    session.current = new AbortController();
-    setLoading(true);
-    setError('');
-    try {
-      const detail = await new XtreamService(transport(session.current.signal)).fetchSeriesInfo(
-        source.data as Parameters<XtreamService['fetchSeriesInfo']>[0],
-        item.seriesId!,
-      );
-      if (task === generation.current) {
-        setSeasons(detail.seasons);
-        setSeason(0);
-        setSeriesTitle(item.name);
-        setPage(0);
-        lastFocus.current = 'season-0';
-        if (!detail.seasons.length) setError('Esta série não possui episódios disponíveis.');
-      }
-    } catch {
-      if (task === generation.current)
-        setError('Não foi possível carregar os episódios. Tente novamente.');
-    } finally {
-      if (task === generation.current) setLoading(false);
+    void load('CHANNEL', existing || s, false, rememberList);
+  }
+  const deferredQuery = useDeferredValue(query);
+  const activeItems =
+    libraryView === 'favorites'
+      ? library.favorites
+      : libraryView === 'recent'
+        ? library.recent
+        : catalog[category] || EMPTY_CATALOG;
+  const catalogIndex = useMemo(() => indexCatalog(activeItems), [activeItems]);
+  useEffect(() => {
+    setGroupPage(0);
+  }, [category]);
+  const items = useMemo(() => {
+    return selectCatalog(catalogIndex, { platform, group, query: deferredQuery });
+  }, [catalogIndex, platform, group, deferredQuery]);
+  const groups = catalogIndex.groups;
+  useEffect(() => {
+    if (drawer !== 'menu') setGroupsOpen(false);
+  }, [drawer]);
+  useEffect(() => {
+    const last = Math.max(0, Math.ceil(items.length / PAGE_SIZE) - 1);
+    if (page > last) setPage(last);
+  }, [items.length, page]);
+  function startPlayback(item: PlaylistItem, episodes: PlaylistItem[] = []) {
+    setQueue(episodes);
+    updateLibrary(watchedItem(libraryRef.current, item, undefined, detailItem || item));
+    setPlaying(item);
+  }
+  function select(item: PlaylistItem) {
+    if (item.category === 'CHANNEL') {
+      startPlayback(item);
+      return;
     }
+    seriesOrigin.current = lastFocus.current;
+    setDetailItem(item);
+  }
+  function selectLibrary(view: 'favorites' | 'recent') {
+    setLibraryView(view);
+    setScreen('catalog');
+    setDetailItem(undefined);
+    setPlatform('');
+    setGroup('');
+    setQuery('');
+    setPage(0);
+    setDrawer(null);
+    lastFocus.current = 'item-0';
   }
   const index = queue.findIndex((i) => i.id === playing?.id);
-  if (playing)
+  const playback = playing ? (
+    <Playback
+      key={playing.id}
+      item={playing}
+      start={library.progress[playing.id] || 0}
+      onProgress={(position) =>
+        updateLibrary(watchedItem(libraryRef.current, playing, position, detailItem || playing))
+      }
+      onBack={() => setPlaying(undefined)}
+      onEnded={() => {
+        updateLibrary(watchedItem(libraryRef.current, playing, 0, detailItem || playing, true));
+        const next = index >= 0 ? queue[index + 1] : undefined;
+        if (next) updateLibrary(watchedItem(libraryRef.current, next, 0, detailItem || next));
+        setPlaying(next);
+      }}
+      onNext={
+        index >= 0 && index < queue.length - 1
+          ? () => {
+              updateLibrary(
+                watchedItem(
+                  libraryRef.current,
+                  queue[index + 1],
+                  0,
+                  detailItem || queue[index + 1],
+                ),
+              );
+              setPlaying(queue[index + 1]);
+            }
+          : undefined
+      }
+      onPrevious={
+        index > 0
+          ? () => {
+              updateLibrary(
+                watchedItem(
+                  libraryRef.current,
+                  queue[index - 1],
+                  0,
+                  detailItem || queue[index - 1],
+                ),
+              );
+              setPlaying(queue[index - 1]);
+            }
+          : undefined
+      }
+    />
+  ) : null;
+  if (detailItem && source)
     return (
-      <Playback
-        key={playing.id}
-        item={playing}
-        onBack={() => setPlaying(undefined)}
-        onEnded={() => {
-          setPlaying(index >= 0 ? queue[index + 1] : undefined);
-        }}
-        onNext={
-          index >= 0 && index < queue.length - 1 ? () => setPlaying(queue[index + 1]) : undefined
-        }
-        onPrevious={index > 0 ? () => setPlaying(queue[index - 1]) : undefined}
-      />
+      <>
+        <div hidden={!!playing}>
+          <Details
+            item={detailItem}
+            source={source}
+            active={!playing}
+            playingId={playing?.id}
+            library={library}
+            onBack={() => {
+              setDetailItem(undefined);
+              lastFocus.current = seriesOrigin.current;
+            }}
+            onPlay={(item, episodes) => startPlayback(item, episodes)}
+            onFavorite={() => updateLibrary(favoriteItem(libraryRef.current, detailItem))}
+          />
+        </div>
+        {playback}
+      </>
     );
+  if (playing) return playback;
   if (!source)
     return (
       <main className="setup" onFocus={remember}>
@@ -323,6 +467,37 @@ export function App() {
         </div>
         <form onSubmit={submit}>
           <h2>Conectar sua lista</h2>
+          {saved.length > 0 && (
+            <section className="saved-lists" aria-label="Listas salvas">
+              {saved.map((profile) => (
+                <div key={profile.id} className="tabs">
+                  <button
+                    type="button"
+                    disabled={loading || !platformReady}
+                    onClick={() => void load('CHANNEL', profile)}
+                  >
+                    {profile.name}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={loading}
+                    aria-label={`Remover lista ${profile.name}`}
+                    onClick={() => {
+                      const next = saved.filter((s) => s.id !== profile.id);
+                      void writeProfiles(next)
+                        .then(() => {
+                          setSaved(next);
+                          return removeLibrary(profile.id);
+                        })
+                        .catch(() => setError('Não foi possível remover a lista.'));
+                    }}
+                  >
+                    Remover
+                  </button>
+                </div>
+              ))}
+            </section>
+          )}
           <div className="tabs">
             {(['XTREAM', 'M3U'] as const).map((t) => (
               <button type="button" key={t} aria-pressed={kind === t} onClick={() => setKind(t)}>
@@ -357,8 +532,27 @@ export function App() {
               </label>
             </div>
           )}
-          <p className="muted">Dados mantidos somente durante esta sessão.</p>
-          <button className="primary" disabled={loading || !!platformError}>
+          {storageReady && (
+            <label className="remember-list">
+              <input
+                type="checkbox"
+                checked={rememberList}
+                onChange={(e) => setRememberList(e.target.checked)}
+              />
+              Salvar lista neste dispositivo
+            </label>
+          )}
+          <p className="muted">
+            {storageReady
+              ? 'Listas salvas são criptografadas neste dispositivo.'
+              : 'Dados mantidos somente durante esta sessão.'}
+          </p>
+          {!!notice && (
+            <p className="muted" role="status">
+              {notice}
+            </p>
+          )}
+          <button className="primary" disabled={loading || !platformReady || !!platformError}>
             {loading ? 'Conectando…' : 'Entrar na lista'}
           </button>
           {(error || platformError) && <p role="alert">{error || platformError}</p>}
@@ -377,14 +571,16 @@ export function App() {
         <h1>
           {screen === 'home'
             ? 'Início'
-            : seasons.length
-              ? seriesTitle
+            : libraryView !== 'all'
+              ? libraryView === 'favorites'
+                ? 'Favoritos'
+                : 'Histórico'
               : platform
                 ? featured.find((p) => p[0] === platform)?.[1]
                 : contentLabels[category]}
           {screen === 'catalog' && <small>{items.length} itens</small>}
         </h1>
-        {screen === 'catalog' && !seasons.length && (
+        {screen === 'catalog' && (
           <input
             id="search"
             aria-label="Buscar nesta seção"
@@ -423,6 +619,8 @@ export function App() {
                     {contentLabels[t]}
                   </button>
                 ))}
+                <button onClick={() => selectLibrary('favorites')}>Favoritos</button>
+                <button onClick={() => selectLibrary('recent')}>Histórico</button>
                 <hr />
                 {featured.map(([key, label]) => (
                   <details key={key}>
@@ -444,30 +642,59 @@ export function App() {
                     ))}
                   </details>
                 ))}
-                {groups.length > 0 && (
-                  <details>
+                {libraryView === 'all' && groups.length > 0 && (
+                  <details onToggle={(event) => setGroupsOpen(event.currentTarget.open)}>
                     <summary tabIndex={0}>Categorias de {contentLabels[category]}</summary>
-                    {groups.map((g) => (
-                      <button
-                        key={g}
-                        onClick={() => {
-                          setSeasons([]);
-                          setGroup(g);
-                          setPlatform('');
-                          setPage(0);
-                          setScreen('catalog');
-                          setDrawer(null);
-                        }}
-                      >
-                        {g}
-                      </button>
-                    ))}
+                    {groupsOpen && (
+                      <>
+                        {groups.length > GROUP_PAGE_SIZE && (
+                          <nav className="tabs" aria-label="Páginas de categorias">
+                            <button
+                              disabled={groupPage === 0}
+                              onClick={() => setGroupPage(groupPage - 1)}
+                            >
+                              Categorias anteriores
+                            </button>
+                            <span>
+                              {groupPage + 1} / {Math.ceil(groups.length / GROUP_PAGE_SIZE)}
+                            </span>
+                            <button
+                              disabled={(groupPage + 1) * GROUP_PAGE_SIZE >= groups.length}
+                              onClick={() => setGroupPage(groupPage + 1)}
+                            >
+                              Mais categorias
+                            </button>
+                          </nav>
+                        )}
+                        {groups
+                          .slice(groupPage * GROUP_PAGE_SIZE, (groupPage + 1) * GROUP_PAGE_SIZE)
+                          .map((g) => (
+                            <button
+                              key={g}
+                              onClick={() => {
+                                setDetailItem(undefined);
+                                setGroup(g);
+                                setPlatform('');
+                                setPage(0);
+                                setScreen('catalog');
+                                setDrawer(null);
+                              }}
+                            >
+                              {g}
+                            </button>
+                          ))}
+                      </>
+                    )}
                   </details>
                 )}
               </>
             ) : (
               <>
-                <p className="muted">Lista conectada nesta sessão.</p>
+                <p className="muted">
+                  {saved.some((s) => s.id === source.id)
+                    ? 'Lista salva neste dispositivo.'
+                    : 'Lista conectada nesta sessão.'}
+                </p>
                 <button
                   onClick={() => {
                     void load(category, source, true);
@@ -475,12 +702,22 @@ export function App() {
                 >
                   Atualizar catálogo
                 </button>
+                {libraryBlocked && (
+                  <button onClick={resetLibrary}>
+                    Descartar biblioteca inválida e salvar novamente
+                  </button>
+                )}
                 <button onClick={logout}>Sair da lista</button>
                 <button onClick={() => setDrawer(null)}>Voltar</button>
               </>
             )}
           </aside>
         </div>
+      )}
+      {!!notice && (
+        <p className="storage-notice" role="status">
+          {notice}
+        </p>
       )}
       {screen === 'home' ? (
         <section className="home">
@@ -507,24 +744,7 @@ export function App() {
         </section>
       ) : (
         <section className="catalog">
-          {seasons.length > 0 && (
-            <nav className="tabs">
-              {seasons.map((s, n) => (
-                <button
-                  id={'season-' + n}
-                  key={s.number}
-                  aria-pressed={n === season}
-                  onClick={() => {
-                    setSeason(n);
-                    setPage(0);
-                  }}
-                >
-                  Temporada {s.number}
-                </button>
-              ))}
-            </nav>
-          )}
-          {platform && !seasons.length && (
+          {platform && (
             <nav className="tabs">
               {types.map((t) => (
                 <button
@@ -566,7 +786,7 @@ export function App() {
                   <button
                     className="poster"
                     id={'item-' + n}
-                    key={item.id + '-' + n}
+                    key={item.category + ':' + item.id}
                     onClick={() => void select(item)}
                   >
                     {item.tvgLogo ? (

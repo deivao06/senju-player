@@ -38,17 +38,25 @@ export interface Season {
   episodes: Episode[];
 }
 
+export interface MediaInfo {
+  name: string;
+  cover: string;
+  plot: string;
+  cast: string;
+  director: string;
+  genre: string;
+  releaseDate: string;
+  rating: string;
+  backdrop?: string;
+  duration?: string;
+}
+
+export interface MovieDetail {
+  info: MediaInfo;
+}
+
 export interface SeriesDetail {
-  info: {
-    name: string;
-    cover: string;
-    plot: string;
-    cast: string;
-    director: string;
-    genre: string;
-    releaseDate: string;
-    rating: string;
-  };
+  info: MediaInfo;
   seasons: Season[];
 }
 

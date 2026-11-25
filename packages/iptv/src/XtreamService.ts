@@ -173,6 +173,56 @@ export class XtreamService {
     }));
   }
 
+  private mediaInfo(raw: unknown, fallbackName?: unknown): import('./playlist').MediaInfo {
+    const info =
+      raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+    const text = (...values: unknown[]) => {
+      for (const value of values) {
+        if (typeof value === 'string' && value.trim())
+          return value
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+      }
+      return '';
+    };
+    const image = (...values: unknown[]) =>
+      values
+        .flat()
+        .find(
+          (value): value is string =>
+            typeof value === 'string' && /^https?:\/\/[^\s]+$/i.test(value),
+        );
+    return {
+      name: text(info.name, fallbackName),
+      cover: image(info.cover, info.movie_image, info.cover_big) || '',
+      plot: text(info.plot, info.description),
+      cast: text(info.cast, info.actors),
+      director: text(info.director),
+      genre: text(info.genre),
+      releaseDate: text(info.releaseDate, info.releasedate, info.release_date),
+      rating: text(info.rating),
+      backdrop: image(info.backdrop_path, info.backdrop),
+      duration: text(info.duration, info.episode_run_time),
+    };
+  }
+
+  async fetchMovieInfo(
+    creds: XtreamCredentials,
+    vodId: string,
+  ): Promise<import('./playlist').MovieDetail> {
+    const baseUrl = creds.url.replace(/\/$/, '');
+    const response = await this.request(
+      `${baseUrl}/player_api.php?username=${encodeURIComponent(creds.username)}&password=${encodeURIComponent(creds.password)}&action=get_vod_info&vod_id=${encodeURIComponent(vodId)}`,
+      60000,
+    );
+    const data = response.data;
+    if (!data || typeof data !== 'object' || (!data.info && !data.movie_data))
+      throw new Error('Detalhes do filme indisponíveis.');
+    return { info: this.mediaInfo(data.info, data.movie_data?.name) };
+  }
+
   async fetchSeriesInfo(
     creds: XtreamCredentials,
     seriesId: string,
@@ -209,16 +259,7 @@ export class XtreamService {
       .sort((a, b) => a.number - b.number);
 
     return {
-      info: {
-        name: data.info.name || '',
-        cover: data.info.cover || '',
-        plot: data.info.plot || '',
-        cast: data.info.cast || '',
-        director: data.info.director || '',
-        genre: data.info.genre || '',
-        releaseDate: data.info.releaseDate || '',
-        rating: data.info.rating || '',
-      },
+      info: this.mediaInfo(data.info),
       seasons,
     };
   }

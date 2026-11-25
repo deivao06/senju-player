@@ -229,7 +229,7 @@ export function PlaylistSetup({
                 )}
               </ScrollView>
               <View style={styles.actions}>
-                {loading && <ActivityIndicator color="#38e883" />}
+                {loading && <ActivityIndicator color={colors.accent} />}
                 <Button
                   title={loading ? 'Conectando…' : 'Conectar lista'}
                   primary

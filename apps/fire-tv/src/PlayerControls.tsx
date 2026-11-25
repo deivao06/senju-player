@@ -160,9 +160,9 @@ const styles = StyleSheet.create({
   },
   logo: { width: 44, height: 44, backgroundColor: colors.surface, borderRadius: 6 },
   info: { flex: 1 },
-  eyebrow: { color: '#85b497', fontSize: 9, letterSpacing: 1.5, fontWeight: '700' },
-  title: { color: '#f1f7f3', fontSize: 18, lineHeight: 23, fontWeight: '700', marginTop: 3 },
-  group: { color: colors.muted, fontSize: 11, marginTop: 3 },
+  eyebrow: { color: '#85b497', fontSize: 11, letterSpacing: 1.2, fontWeight: '700' },
+  title: { color: '#f1f7f3', fontSize: 20, lineHeight: 26, fontWeight: '700', marginTop: 3 },
+  group: { color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 3 },
   liveBadge: {
     flexDirection: 'row',
     gap: 6,
@@ -172,8 +172,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 6,
   },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#38e883' },
-  liveText: { color: '#a5edbd', fontSize: 10, fontWeight: '800' },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent },
+  liveText: { color: '#a5edbd', fontSize: 12, fontWeight: '800' },
   panel: {
     position: 'absolute',
     left: 24,

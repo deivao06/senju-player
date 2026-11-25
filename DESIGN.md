@@ -95,13 +95,13 @@ Verde Senju (`accent`) identifica a ação principal e progresso; `onAccent` for
 
 ## Typography
 
-Sistema sans nativo, sem família adicional carregada. Medidas tipográficas no frontmatter usam sp; dimensões de layout usam dp, não pixels físicos. A escala é contextual, sem razão matemática única.
+Sistema sans nativo, sem família adicional carregada. Medidas tipográficas no frontmatter usam sp; dimensões de layout usam dp, não pixels físicos. A escala é contextual, sem razão matemática única. No Smart TV, `style.css` usa `--type-body`, `--type-label` e `--type-meta` sobre a mesma família.
 
-Display serve à chamada do login; headline a títulos de painéis; body à descrição; label às ações; card-title aos nomes da grade. Botões pequenos usam 13sp/18, contexto focado 13sp/17 e dicas 11sp. Tempos usam 12sp e números tabulares. Textos secundários menores existem no player e não constituem uma recomendação de leitura à distância aprovada.
+Display serve à chamada do login; headline a títulos de painéis; body à descrição; label às ações; card-title aos nomes da grade. Botões pequenos usam 13sp/18, contexto focado 13sp/17 e dicas 11–12sp. Tempos usam 13sp/18 e números tabulares. Na tela de detalhes, o título usa 22–28sp/27–34, a sinopse 14sp/22, os metadados 12sp/17 e o texto auxiliar 13sp/19; no player, o título usa 20sp/26 e os rótulos 11–12sp. Esses valores descrevem o código atual; a leitura em TV real ainda não foi aprovada.
 
 ## Layout
 
-Ritmo compacto, com intervalos de 8 e preenchimentos de controle de 14; superfícies maiores respiram com 18. A grade calcula dimensões a partir da janela e preserva legenda contextual de altura fixa. Controles mantêm contorno reservado em repouso para evitar reflow ao receber foco. Composição de telas e adaptações de janela ficam em `.impeccable/surfaces/fire-tv.md`.
+Ritmo compacto, com intervalos de 8 e preenchimentos de controle de 14; superfícies maiores respiram com 18. A grade calcula dimensões a partir da janela e preserva legenda contextual de altura fixa. Controles mantêm contorno reservado em repouso para evitar reflow ao receber foco. No Smart TV, `--edge` combina `3vw` com `env(safe-area-inset-*)` como margem de segurança, e a grade passa a oito colunas em telas muito largas. Composição de telas e adaptações de janela ficam em `.impeccable/surfaces/fire-tv.md`.
 
 ## Elevation & Depth
 
